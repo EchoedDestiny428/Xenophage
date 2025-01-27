@@ -1,15 +1,6 @@
 #include "main.h"
 #include "lemlib/api.hpp"
 
-//TO DO LIST
-/*
- - Get track width and others
- - Correctly setup the encoders
- - Port encoders correctly
- - Setup KP, KI, KD values
-*/
-
-//--Device Setup--
 
 
 
