@@ -340,7 +340,8 @@ void FuncIntake() {
       IntakeToggle *= -1;
       pros::delay(500);
     } else if (IntakeToggle == -1) {
-      Intake.move_velocity(IntakeSpeed * 2);
+      IntakeFlex.move_velocity(IntakeSpeed * 2);
+      IntakeHook.move_velocity(IntakeSpeed * 2);
       pros::delay(10);
     }
     pros::delay(10);
