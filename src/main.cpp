@@ -70,7 +70,7 @@ lemlib::ExpoDriveCurve throttleCurve(2, // joystick deadband out of 127
 // input curve for steer input during driver control
 lemlib::ExpoDriveCurve steerCurve(2, // joystick deadband out of 127
                                   2.5, // minimum output where drivetrain will move out of 127
-                                  1.019 // expo curve gain og 1.019
+                                  1.0 // expo curve gain og 1.019
 );
 
 
@@ -96,7 +96,6 @@ void initialize() {
     chassis.calibrate(); // calibrate sensors
 
     // the default rate is 50. however, if you need to change the rate, you
-    // SKIBIDI RIZZ IN OHIO SIGMA  
     // can do the following.
     // lemlib::bufferedStdout().setRate(...);
     // If you use bluetooth or a wired connection, you will want to have a rate of 10ms
@@ -167,14 +166,14 @@ void AutoEject() {
 
 void autonomous() { //Auto  -------------------------------------CHECK AUTO COMMENT, TEAM COLOR, TOP DIST THINGY
   //pros::rtos::Task TaskStopIntake(StopIntake);
-  pros::rtos::Task TaskAutoEject(AutoEject); //TURN OFF FOR SKILLS!!!!!!!!!!11-----------------------------------------------------------
+  //pros::rtos::Task TaskAutoEject(AutoEject); //TURN OFF FOR SKILLS!!!!!!!!!!11-----------------------------------------------------------
 
   //pros::rtos::Task TaskJamPrev(intakeAutoJamPrev);
-  VSensor.set_led_pwm(100);
+  //VSensor.set_led_pwm(100);
 
   pros::delay(20);
 
-  chassis.turnToHeading(270, 2000, {.maxSpeed = 50});
+  //rip no autonomous :)
 
 
 }
@@ -190,7 +189,7 @@ void DoinkerControl() {
         Doinker.set_value(0);
       }
       DoinkerToggle *= -1;
-      pros::delay(300);
+      pros::delay(500);
     }
     pros::delay(10);
   }
@@ -217,7 +216,7 @@ void ChassisControl() {
     int leftY = ParaRAID.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
     int rightX = ParaRAID.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
-    chassis.arcade(leftY, rightX * 1.5);
+    chassis.arcade(leftY*1.1, rightX);
 
     if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
       chassis.setPose(0, 0, 0);
@@ -314,12 +313,12 @@ void FuncIntake() {
         IntakeHook.brake();
       } else {
         IntakeFlex.move_velocity(IntakeSpeed * 2);
-        IntakeHook.move_velocity(IntakeSpeed * 2);
+        IntakeHook.move_velocity(IntakeSpeed * 1.8);
       }
     } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
       if (IntakeToggle == 1) {
         IntakeFlex.move_velocity(IntakeSpeed * 2);
-        IntakeHook.move_velocity(IntakeSpeed * 2);
+        IntakeHook.move_velocity(IntakeSpeed * 1.8);
       } else {
         IntakeFlex.brake();
         IntakeHook.brake();
@@ -331,7 +330,7 @@ void FuncIntake() {
       pros::delay(500);
     } else if (IntakeToggle == -1) {
       IntakeFlex.move_velocity(IntakeSpeed * 2);
-      IntakeHook.move_velocity(IntakeSpeed * 2);
+      IntakeHook.move_velocity(IntakeSpeed * 1.8);
       pros::delay(10);
     }
     pros::delay(10);
