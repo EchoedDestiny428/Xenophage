@@ -4,29 +4,29 @@
 
 
 
-pros::MotorGroup Left ({1, -2, -3}, pros::MotorGears::blue);
-pros::MotorGroup Right ({-18, 19, 20}, pros::MotorGears::blue);
-pros::Motor ArmLeft (-9, pros::MotorGears::green);
-pros::Motor ArmRight (10, pros::MotorGears::green);
-pros::Motor IntakeFlex (-14, pros::MotorGears::green);
-pros::Motor IntakeHook (15, pros::MotorGears::green);
+pros::MotorGroup Left ({8, -9, -10}, pros::MotorGears::blue);
+pros::MotorGroup Right ({3, -4, 5}, pros::MotorGears::blue);
+pros::Motor ArmLeft (11, pros::MotorGears::green);
+pros::Motor ArmRight (12, pros::MotorGears::green);
+pros::Motor IntakeFlex (-16, pros::MotorGears::green);
+pros::Motor IntakeHook (-21, pros::MotorGears::green);
 
 pros::Controller ParaRAID(pros::E_CONTROLLER_MASTER);
 
-pros::adi::DigitalIn ArmChecker('A');
-pros::adi::DigitalOut Lift('F');
+pros::adi::DigitalIn ArmChecker('C');
+pros::adi::DigitalOut Lift('D');
 pros::adi::DigitalOut Eject('E');
-pros::adi::DigitalOut MobileGoal('G');
-pros::adi::DigitalOut Doinker('D');
-pros::adi::DigitalOut Hang('H');
+pros::adi::DigitalOut MobileGoal('A');
+pros::adi::DigitalOut Doinker('B');
+pros::adi::DigitalOut Hang('F');
 
 pros::Optical VSensor(4);
 
 pros::Imu Inertial(13);
-pros::Rotation HorizontalEnc(-17);
-pros::Rotation VerticalEnc(12);
+pros::Rotation HorizontalEnc(6);
+pros::Rotation VerticalEnc(1);
 
-lemlib::TrackingWheel Horizontal(&HorizontalEnc, lemlib::Omniwheel::NEW_2, -4.5);
+lemlib::TrackingWheel Horizontal(&HorizontalEnc, lemlib::Omniwheel::NEW_2, -4.5); //change
 lemlib::TrackingWheel Vertical(&VerticalEnc, lemlib::Omniwheel::NEW_2, 1.25);
 
 // drivetrain settings
@@ -135,7 +135,7 @@ bool intakeStop = true;
 void StopIntake() {
   if (VSensor.get_proximity() > 200 && intakeStop == true) {
     IntakeFlex.brake();
-    IntakeHook.stop();
+    IntakeHook.brake();
     intakeStop = false;
   }
 }
@@ -300,15 +300,14 @@ void ArmControl() {
 
 void FuncIntake() {
   int IntakeToggle = 1;
-  int IntakeLiftToggle = 1;
   int IntakeSpeed = 100; //100 for skills, 90 regular
   while (true) {
-    if (Intake.get_actual_velocity() == 0 && IntakeToggle == -1) {
+    if (IntakeHook.get_actual_velocity() == 0 && IntakeToggle == -1) {
       IntakeHook.move_velocity(IntakeSpeed * -2);
     } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
       while (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
-        Intake.move_velocity(IntakeSpeed * -2);
-        Intake.move_velocity(IntakeSpeed * -2);
+        IntakeFlex.move_velocity(IntakeSpeed * -2);
+        IntakeHook.move_velocity(IntakeSpeed * -2);
       }
       if (IntakeToggle == 1) {
         IntakeFlex.brake();
@@ -340,6 +339,7 @@ void FuncIntake() {
 }
 
 void FuncIntakeLift() {
+  int IntakeLiftToggle = 1;
   if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT) && !skillz) {
     if (IntakeLiftToggle == 1) {
       Lift.set_value(4096);
@@ -403,7 +403,7 @@ void opcontrol() { //Driver
   pros::rtos::Task TaskEject(DriverEject);
   pros::rtos::Task TaskDoiner(DoinkerControl);
   pros::rtos::Task TaskHang(HangControl);
-  pros::rots::Task TaskFuncIntakeLift(FuncIntakeLift);
+  pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
 
 
 
