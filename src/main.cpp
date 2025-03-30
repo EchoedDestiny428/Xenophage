@@ -92,7 +92,7 @@ void on_center_button() {
 void initialize() {
     pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensors
-    ArmOdom.tare_position(); // tare rotation sensor
+    ArmOdom.reset_position(); // tare rotation sensor
 
     // the default rate is 50. however, if you need to change the rate, you
     // can do the following.
