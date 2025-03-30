@@ -1,6 +1,5 @@
 #include "main.h"
 #include "lemlib/api.hpp"
-#include "Units.cpp"
 
 
 
@@ -19,7 +18,7 @@ pros::adi::DigitalOut MobileGoal('A');
 pros::adi::DigitalOut Doinker('B');
 pros::adi::DigitalOut Hang('F');
 
-pros::adi::Rotation ArmOdom(3);
+pros::Rotation ArmOdom(3);
 pros::Optical VSensor(4); //wrong
 pros::Imu Inertial(10); //wrong
 pros::Rotation HorizontalEnc(0.6);
@@ -93,6 +92,7 @@ void on_center_button() {
 void initialize() {
     pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensors
+    ArmOdom.tare_position(); // tare rotation sensor
 
     // the default rate is 50. however, if you need to change the rate, you
     // can do the following.
@@ -225,61 +225,65 @@ void ChassisControl() {
   }
 }
 
-void ArmControl() {
-  Arm.tare_position();
-  Arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+void ArmPIDtoPosition(int target) {
+    int ArmKp = 0.5; // Proportional gain
+    int ArmKd = 0.0; // Derivative gain
+    int error;
+    int prevError;
+    int derivative;
 
-  int ArmLoadPos = 258;
-  int ArmTipPos = 1600;
+    while (true) {
+        if (Arm.get_position() < (target - 0.1) || Arm.get_position() > (target + 0.1)) {
+            error = ArmOdom.get_position() - target;
+            derivative = error - prevError;
 
-  while (true) { 
-    if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_Y)) {
-      Arm.move_absolute(ArmTipPos, 200);
-      
-      while ((Arm.get_position() < (ArmTipPos - 2)) || (Arm.get_position() > (ArmTipPos + 2))) {
-        pros::delay(5);
-      }
-    } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && ArmChecker.get_value()) {
-      Arm.move_absolute(ArmLoadPos, 100);
-      while ((Arm.get_position() < (ArmLoadPos - 2)) || (Arm.get_position() > (ArmLoadPos + 2))) {
-        pros::delay(10);
-      }
-    } else if (ArmChecker.get_value()) {
-      Arm.brake();
-      Arm.tare_position();
-    } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
-      Arm.move_velocity(-200);
-    } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
-      while (!ArmChecker.get_value()) {
-        Arm.move_velocity(-200);
-        pros::delay(5);
-        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
-          goto ArmStuck;
+
+            Arm.move_velocity(ArmKp * (error) + ArmKd * (derivative));
+
+
+            prevError = error;
+            pros::delay(10);
+           
+        } else {
+            Arm.brake();
+            break;
         }
-      }
-
-      Arm.move_relative(-100, 200);
-      pros::delay(300);
-      Arm.brake();
-      Arm.tare_position();
-
-      ArmStuck:
-      Arm.brake();
-    } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
-      Arm.move_absolute(ArmLoadPos, 200);
-      while ((Arm.get_position() < (ArmLoadPos - 5)) || (Arm.get_position() > (ArmLoadPos + 5))) {
-        pros::delay(5);
-      }
-    } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
-      Arm.move_velocity(200);
-    } else {
-      ArmLeft.brake();
-      ArmRight.brake();
-      pros::delay(5);
     }
-    pros::delay(10);
-  }
 }
+
+void ArmControl() {
+    Arm.tare_position();
+    Arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+
+    int ArmLoadPos = 40;
+    int ArmTipPos = 180;
+  
+    while (true) { 
+
+        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_Y)) {
+            ArmPIDtoPosition(ArmTipPos);
+            
+        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && ArmOdom.get_position() < ArmLoadPos) {
+            ArmPIDtoPosition(ArmLoadPos);
+
+        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
+            ArmPIDtoPosition(0);
+            
+        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
+            Arm.move_velocity(200);
+
+        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
+            if (ArmOdom.get_position() > 2) {
+                Arm.move_velocity(-200);
+            } else {
+                Arm.brake();
+            }
+        } else {
+            Arm.brake();
+        }
+        pros::delay(10);
+    }
+  }
 
 
 
