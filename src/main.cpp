@@ -1,30 +1,29 @@
 #include "main.h"
 #include "lemlib/api.hpp"
+#include "Units.cpp"
 
 
 
-
-pros::MotorGroup Left ({8, -9, -10}, pros::MotorGears::blue);
-pros::MotorGroup Right ({3, -4, 5}, pros::MotorGears::blue);
-pros::Motor ArmLeft (11, pros::MotorGears::green);
-pros::Motor ArmRight (12, pros::MotorGears::green);
-pros::Motor IntakeFlex (-16, pros::MotorGears::green);
-pros::Motor IntakeHook (-21, pros::MotorGears::green);
+pros::MotorGroup Left ({-20, -16, 15}, pros::MotorGears::blue);
+pros::MotorGroup Right ({14, 18, -17}, pros::MotorGears::blue);
+pros::Motor Arm (-4, pros::MotorGears::green);
+pros::Motor IntakeFlex (1, pros::MotorGears::green);
+pros::Motor IntakeHook (-2, pros::MotorGears::blue);
 
 pros::Controller ParaRAID(pros::E_CONTROLLER_MASTER);
 
-pros::adi::DigitalIn ArmChecker('C');
+
 pros::adi::DigitalOut Lift('D');
 pros::adi::DigitalOut Eject('E');
 pros::adi::DigitalOut MobileGoal('A');
 pros::adi::DigitalOut Doinker('B');
 pros::adi::DigitalOut Hang('F');
 
-pros::Optical VSensor(4);
-
-pros::Imu Inertial(13);
-pros::Rotation HorizontalEnc(6);
-pros::Rotation VerticalEnc(1);
+pros::adi::Rotation ArmOdom(3);
+pros::Optical VSensor(4); //wrong
+pros::Imu Inertial(10); //wrong
+pros::Rotation HorizontalEnc(0.6);
+pros::Rotation VerticalEnc(0);
 
 lemlib::TrackingWheel Horizontal(&HorizontalEnc, lemlib::Omniwheel::NEW_2, -4.5); //change
 lemlib::TrackingWheel Vertical(&VerticalEnc, lemlib::Omniwheel::NEW_2, 1.25);
@@ -227,65 +226,52 @@ void ChassisControl() {
 }
 
 void ArmControl() {
-  ArmLeft.tare_position();
-  ArmRight.tare_position();
-  ArmLeft.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-  ArmRight.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  Arm.tare_position();
+  Arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
   int ArmLoadPos = 258;
   int ArmTipPos = 1600;
 
   while (true) { 
     if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_Y)) {
-      ArmLeft.move_absolute(ArmTipPos, 200);
-      ArmRight.move_absolute(ArmTipPos, 200);
-      while (((ArmLeft.get_position() + ArmRight.get_position())/2 < (ArmTipPos - 2)) || ((ArmLeft.get_position() + ArmRight.get_position())/2 > (ArmTipPos + 2))) {
+      Arm.move_absolute(ArmTipPos, 200);
+      
+      while ((Arm.get_position() < (ArmTipPos - 2)) || (Arm.get_position() > (ArmTipPos + 2))) {
         pros::delay(5);
       }
     } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && ArmChecker.get_value()) {
-      ArmLeft.move_absolute(ArmLoadPos, 100);
-      ArmRight.move_absolute(ArmLoadPos, 100);
-      while (((ArmLeft.get_position() + ArmRight.get_position())/2 < (ArmLoadPos - 2)) || ((ArmLeft.get_position() + ArmRight.get_position())/2 > (ArmLoadPos + 2))) {
+      Arm.move_absolute(ArmLoadPos, 100);
+      while ((Arm.get_position() < (ArmLoadPos - 2)) || (Arm.get_position() > (ArmLoadPos + 2))) {
         pros::delay(10);
       }
     } else if (ArmChecker.get_value()) {
-      ArmLeft.brake();
-      ArmRight.brake();
-      ArmLeft.tare_position();
-      ArmRight.tare_position();
+      Arm.brake();
+      Arm.tare_position();
     } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
-      ArmLeft.move_velocity(-200);
-      ArmRight.move_velocity(-200);
+      Arm.move_velocity(-200);
     } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
       while (!ArmChecker.get_value()) {
-        ArmLeft.move_velocity(-200);
-        ArmRight.move_velocity(-200);
+        Arm.move_velocity(-200);
         pros::delay(5);
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
           goto ArmStuck;
         }
       }
 
-      ArmLeft.move_relative(-100, 200);
-      ArmRight.move_relative(-100, 200);
+      Arm.move_relative(-100, 200);
       pros::delay(300);
-      ArmLeft.brake();
-      ArmRight.brake();
-      ArmLeft.tare_position();
-      ArmRight.tare_position();
+      Arm.brake();
+      Arm.tare_position();
 
       ArmStuck:
-      ArmLeft.brake();
-      ArmRight.brake();
+      Arm.brake();
     } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
-      ArmLeft.move_absolute(ArmLoadPos, 200);
-      ArmRight.move_absolute(ArmLoadPos, 200);
-      while (((ArmLeft.get_position() + ArmRight.get_position())/2 < (ArmLoadPos - 5)) || ((ArmLeft.get_position() + ArmRight.get_position())/2 > (ArmLoadPos + 5))) {
+      Arm.move_absolute(ArmLoadPos, 200);
+      while ((Arm.get_position() < (ArmLoadPos - 5)) || (Arm.get_position() > (ArmLoadPos + 5))) {
         pros::delay(5);
       }
     } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
-      ArmLeft.move_velocity(200);
-      ArmRight.move_velocity(200);
+      Arm.move_velocity(200);
     } else {
       ArmLeft.brake();
       ArmRight.brake();
