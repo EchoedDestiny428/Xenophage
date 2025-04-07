@@ -1,7 +1,8 @@
 #include "main.h"
 #include "lemlib/api.hpp"
 
-
+//----------------------------------------------------------------------------------Device Setup----------------------------------------------------------------------------------
+//--START Device Setup--
 
 pros::MotorGroup Left ({-20, -16, 15}, pros::MotorGears::blue);
 pros::MotorGroup Right ({14, 18, -17}, pros::MotorGears::blue);
@@ -128,21 +129,17 @@ void competition_initialize() { //Auto Selector
 
 }
 
-bool intakeStop = true;
+//----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
-void StopIntake() {
-  if (VSensor.get_proximity() > 200 && intakeStop == true) {
-    IntakeFlex.brake();
-    IntakeHook.brake();
-    intakeStop = false;
-  }
-}
 
 bool TeamColor = true; //true = blue, red = false 
 bool skillz = false;
 
+//----------------------------------------------------------------------------------Auto Setup----------------------------------------------------------------------------------
+
 bool DontEject = false;
 bool EjectStay = false;
+
 
 void AutoEject() {
   pros::c::optical_rgb_s_t rgb_value;
@@ -161,13 +158,12 @@ void AutoEject() {
   }
 }
 
+//----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
+void autonomous() {
+  //pros::rtos::Task TaskAutoEject(AutoEject); //TURN OFF FOR SKILLS!!!!!!!!!!
 
-void autonomous() { //Auto  -------------------------------------CHECK AUTO COMMENT, TEAM COLOR, TOP DIST THINGY
-  //pros::rtos::Task TaskStopIntake(StopIntake);
-  //pros::rtos::Task TaskAutoEject(AutoEject); //TURN OFF FOR SKILLS!!!!!!!!!!11-----------------------------------------------------------
-
-  //pros::rtos::Task TaskJamPrev(intakeAutoJamPrev);
+  
   //VSensor.set_led_pwm(100);
 
   pros::delay(20);
@@ -176,7 +172,8 @@ void autonomous() { //Auto  -------------------------------------CHECK AUTO COMM
 
 
 }
-//hell yeah 
+
+//--------------------------------------------------------------------------------Doinker--------------------------------------------------------------------------------
 
 void DoinkerControl() {
   int DoinkerToggle = 1;
@@ -194,6 +191,8 @@ void DoinkerControl() {
   }
 }
 
+//--------------------------------------------------------------------------------Hang--------------------------------------------------------------------------------
+
 void HangControl() {
   int HangToggle = 1;
   while (true) {
@@ -210,6 +209,8 @@ void HangControl() {
   }
 }
 
+//--------------------------------------------------------------------------------Chassis--------------------------------------------------------------------------------
+
 void ChassisControl() {
   while (true) {
     int leftY = ParaRAID.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
@@ -225,9 +226,11 @@ void ChassisControl() {
   }
 }
 
+//--------------------------------------------------------------------------------Arm--------------------------------------------------------------------------------
+
 void ArmPIDtoPosition(int target) {
-    int ArmKp = 0.5; // Proportional gain
-    int ArmKd = 0.0; // Derivative gain
+    int ArmKp = 0.5; // Proportional Modifier
+    int ArmKd = 0.0; // Derivative Modifier
     int error;
     int prevError;
     int derivative;
@@ -238,7 +241,7 @@ void ArmPIDtoPosition(int target) {
             derivative = error - prevError;
 
 
-            Arm.move_velocity(ArmKp * (error) + ArmKd * (derivative));
+            Arm.move_velocity(ArmKp * error + ArmKd * derivative);
 
 
             prevError = error;
@@ -283,129 +286,138 @@ void ArmControl() {
         }
         pros::delay(10);
     }
-  }
+}
 
+
+//--------------------------------------------------------------------------------Intake--------------------------------------------------------------------------------
 
 
 void FuncIntake() {
-  int IntakeToggle = 1;
-  int IntakeSpeed = 100; //100 for skills, 90 regular
-  while (true) {
-    if (IntakeHook.get_actual_velocity() == 0 && IntakeToggle == -1) {
-      IntakeHook.move_velocity(IntakeSpeed * -2);
-    } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
-      while (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
-        IntakeFlex.move_velocity(IntakeSpeed * -2);
-        IntakeHook.move_velocity(IntakeSpeed * -2);
-      }
-      if (IntakeToggle == 1) {
-        IntakeFlex.brake();
-        IntakeHook.brake();
-      } else {
-        IntakeFlex.move_velocity(IntakeSpeed * 2);
-        IntakeHook.move_velocity(IntakeSpeed * 1.8);
-      }
-    } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-      if (IntakeToggle == 1) {
-        IntakeFlex.move_velocity(IntakeSpeed * 2);
-        IntakeHook.move_velocity(IntakeSpeed * 1.8);
-      } else {
-        IntakeFlex.brake();
-        IntakeHook.brake();
-        IntakeFlex.move_relative(-30, 180);
-        IntakeHook.move_relative(-30, 180);
-        pros::delay(50);
-      }
-      IntakeToggle *= -1;
-      pros::delay(500);
-    } else if (IntakeToggle == -1) {
-      IntakeFlex.move_velocity(IntakeSpeed * 2);
-      IntakeHook.move_velocity(IntakeSpeed * 1.8);
-      pros::delay(10);
+    int IntakeToggle = 1;
+    int IntakeSpeed = 100; //100 for skills, 90 regular
+    while (true) {
+        if (IntakeHook.get_actual_velocity() == 0 && IntakeToggle == -1) {
+            IntakeHook.move_velocity(IntakeSpeed * -2);
+        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
+            while (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
+                IntakeFlex.move_velocity(IntakeSpeed * -2);
+                IntakeHook.move_velocity(IntakeSpeed * -2);
+            }
+            if (IntakeToggle == 1) {
+                IntakeFlex.brake();
+                IntakeHook.brake();
+            } else {
+                IntakeFlex.move_velocity(IntakeSpeed * 2);
+                IntakeHook.move_velocity(IntakeSpeed * 2);
+            }
+
+        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+            if (IntakeToggle == 1) {
+                IntakeFlex.move_velocity(IntakeSpeed * 2);
+                IntakeHook.move_velocity(IntakeSpeed * 2);
+            } else {
+                IntakeFlex.brake();
+                IntakeHook.brake();
+                IntakeFlex.move_relative(-30, 180);
+                IntakeHook.move_relative(-30, 180);
+                pros::delay(50);
+            }
+            IntakeToggle *= -1;
+            pros::delay(500);
+        } else if (IntakeToggle == -1) {
+            IntakeFlex.move_velocity(IntakeSpeed * 2);
+            IntakeHook.move_velocity(IntakeSpeed * 2);
+            pros::delay(10);
+        }
+        pros::delay(10);
     }
-    pros::delay(10);
-  }
 }
 
 void FuncIntakeLift() {
-  int IntakeLiftToggle = 1;
-  if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT) && !skillz) {
-    if (IntakeLiftToggle == 1) {
-      Lift.set_value(4096);
-      pros::delay(500);
-    } else {
-      Lift.set_value(0);
-      pros::delay(500);
+    int IntakeLiftToggle = 1;
+    if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT) && !skillz) {
+        if (IntakeLiftToggle == 1) {
+            Lift.set_value(4096);
+            pros::delay(500);
+        } else {
+            Lift.set_value(0);
+            pros::delay(500);
+        }
+        IntakeLiftToggle *= -1;
+        pros::delay(500);
     }
-    IntakeLiftToggle *= -1;
-    pros::delay(500);
-  }
 }
+
+//--------------------------------------------------------------------------------Mogoal--------------------------------------------------------------------------------
 
 int MogoToggle = 1;
 void FuncMogo() {
-  while (true) {
-    if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
-      if (MogoToggle == 1) {
-        MobileGoal.set_value(4095);
-        ParaRAID.set_text(0, 0, "On ");
-      } else {
-        MobileGoal.set_value(0);
-        //Eject.set(false);
-        ParaRAID.set_text(0, 0, "Off");
-      }
+    while (true) {
+        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+            if (MogoToggle == 1) {
+                MobileGoal.set_value(4095);
+                ParaRAID.set_text(0, 0, "On ");
+            } else {
+                MobileGoal.set_value(0);
+                ParaRAID.set_text(0, 0, "Off");
+            }
 
-      MogoToggle *= -1;
-      pros::delay(500);
+            MogoToggle *= -1;
+            pros::delay(500);
+        }
+        pros::delay(5);
     }
-    pros::delay(5);
-  }
 }
+
+//--------------------------------------------------------------------------------Eject--------------------------------------------------------------------------------
 
 void DriverEject() {
-  pros::c::optical_rgb_s_t rgb_value;
-  while (true) {
-    rgb_value = VSensor.get_rgb();
-    if (!TeamColor && (rgb_value.blue > 180) && (rgb_value.red < 230) && (MogoToggle == -1)) {
-      Eject.set_value(4096);
-      pros::delay(500);
-    } else if (TeamColor && (rgb_value.red > 230) && (rgb_value.blue < 180) && (MogoToggle == -1)) {
-      Eject.set_value(4096);
-      pros::delay(500);
-    } else if (!EjectStay) {
-      Eject.set_value(0);
+    pros::c::optical_rgb_s_t rgb_value;
+    while (true) {
+        rgb_value = VSensor.get_rgb();
+        if (!TeamColor && (rgb_value.blue > 180) && (rgb_value.red < 230) && (MogoToggle == -1)) {
+            Eject.set_value(4096);
+            pros::delay(500);
+        } else if (TeamColor && (rgb_value.red > 230) && (rgb_value.blue < 180) && (MogoToggle == -1)) {
+            Eject.set_value(4096);
+            pros::delay(500);
+        } else if (!EjectStay) {
+            Eject.set_value(0);
+        }
+        pros::delay(5);
     }
-    pros::delay(5);
-  }
 }
 
 
 
-
+//----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
 
 
 void opcontrol() { //Driver
-	pros::rtos::Task TaskChassisControl(ChassisControl);
-  pros::rtos::Task TaskArmControl(ArmControl);
-  pros::rtos::Task TaskFuncIntake(FuncIntake);
-  pros::rtos::Task TaskFuncMogo(FuncMogo);
-  pros::rtos::Task TaskEject(DriverEject);
-  pros::rtos::Task TaskDoiner(DoinkerControl);
-  pros::rtos::Task TaskHang(HangControl);
-  pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
+    pros::rtos::Task TaskChassisControl(ChassisControl);
+    pros::rtos::Task TaskArmControl(ArmControl);
+    pros::rtos::Task TaskFuncIntake(FuncIntake);
+    pros::rtos::Task TaskFuncMogo(FuncMogo);
+    pros::rtos::Task TaskEject(DriverEject);
+    pros::rtos::Task TaskDoiner(DoinkerControl);
+    pros::rtos::Task TaskHang(HangControl);
+    pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
 
 
 
-  pros::c::optical_rgb_s_t rgb_value;
-  VSensor.set_led_pwm(100);
-	while (true) {
-    rgb_value = VSensor.get_rgb();
-    pros::screen::print(TEXT_MEDIUM, 1, "Red value: %lf \n", rgb_value.red);
-    pros::screen::print(TEXT_MEDIUM, 2, "Green value: %lf \n", rgb_value.green);
-    pros::screen::print(TEXT_MEDIUM, 3, "Blue value: %lf \n", rgb_value.blue);
-    pros::screen::print(TEXT_MEDIUM, 4, "Heading: %lf \n", chassis.getPose().theta);
+    pros::c::optical_rgb_s_t rgb_value;
+    VSensor.set_led_pwm(100);
+    while (true) {
+        rgb_value = VSensor.get_rgb();
+        pros::screen::print(TEXT_MEDIUM, 1, "Red value: %lf \n", rgb_value.red);
+        pros::screen::print(TEXT_MEDIUM, 2, "Green value: %lf \n", rgb_value.green);
+        pros::screen::print(TEXT_MEDIUM, 3, "Blue value: %lf \n", rgb_value.blue);
 
-    //pros::screen::print(TEXT_MEDIUM, 4, "Proximity value: %ld \n", VSensor.get_proximity());
-    pros::delay(20);
-  }
+        pros::screen::print(TEXT_MEDIUM, 0, "X: %lf \n", chassis.getPose().x);
+        pros::screen::print(TEXT_MEDIUM, 1, "Y: %lf \n", chassis.getPose().y);
+        pros::screen::print(TEXT_MEDIUM, 4, "Heading: %lf \n", chassis.getPose().theta);
+
+        //pros::screen::print(TEXT_MEDIUM, 4, "Proximity value: %ld \n", VSensor.get_proximity());
+        pros::delay(20);
+    }
 }
