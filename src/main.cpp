@@ -4,29 +4,29 @@
 //----------------------------------------------------------------------------------Device Setup----------------------------------------------------------------------------------
 //--START Device Setup--
 
-pros::MotorGroup Left ({-20, -16, 15}, pros::MotorGears::blue);
+pros::MotorGroup Left ({-20, -16, 13}, pros::MotorGears::blue);
 pros::MotorGroup Right ({14, 18, -17}, pros::MotorGears::blue);
-pros::Motor Arm (-4, pros::MotorGears::green);
-pros::Motor IntakeFlex (1, pros::MotorGears::green);
-pros::Motor IntakeHook (-2, pros::MotorGears::blue);
+pros::Motor Arm (4, pros::MotorGears::green);
+pros::Motor IntakeFlex (-2, pros::MotorGears::green);
+pros::Motor IntakeHook (-1, pros::MotorGears::blue);
 
 pros::Controller ParaRAID(pros::E_CONTROLLER_MASTER);
 
 
 pros::adi::DigitalOut Lift('D');
 pros::adi::DigitalOut Eject('E');
-pros::adi::DigitalOut MobileGoal('A');
-pros::adi::DigitalOut Doinker('B');
+pros::adi::DigitalOut MobileGoal('B');
+pros::adi::DigitalOut Doinker('A');
 pros::adi::DigitalOut Hang('F');
 
 pros::Rotation ArmOdom(3);
 pros::Optical VSensor(4); //wrong
 pros::Imu Inertial(10); //wrong
-pros::Rotation HorizontalEnc(0.6);
-pros::Rotation VerticalEnc(0);
+pros::Rotation HorizontalEnc(6);
+pros::Rotation VerticalEnc(-12);
 
-lemlib::TrackingWheel Horizontal(&HorizontalEnc, lemlib::Omniwheel::NEW_2, -4.5); //change
-lemlib::TrackingWheel Vertical(&VerticalEnc, lemlib::Omniwheel::NEW_2, 1.25);
+lemlib::TrackingWheel Horizontal(&HorizontalEnc, lemlib::Omniwheel::NEW_2, 0.6); //change
+lemlib::TrackingWheel Vertical(&VerticalEnc, lemlib::Omniwheel::NEW_2, 0.0);
 
 // drivetrain settings
 lemlib::Drivetrain drivetrain(&Left, &Right, 12.8, lemlib::Omniwheel::NEW_325, 450, 2); //left right track width, wheel type, rpm, drift
@@ -93,7 +93,7 @@ void on_center_button() {
 void initialize() {
     pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensors
-    ArmOdom.reset_position(); // tare rotation sensor
+    
 
     // the default rate is 50. however, if you need to change the rate, you
     // can do the following.
@@ -228,49 +228,44 @@ void ChassisControl() {
 
 //--------------------------------------------------------------------------------Arm--------------------------------------------------------------------------------
 
-void ArmPIDtoPosition(int target) {
+void ArmPIDtoPosition(double target) {
     int ArmKp = 0.5; // Proportional Modifier
     int ArmKd = 0.0; // Derivative Modifier
     int error;
     int prevError;
     int derivative;
 
-    while (true) {
-        if (Arm.get_position() < (target - 0.1) || Arm.get_position() > (target + 0.1)) {
-            error = ArmOdom.get_position() - target;
-            derivative = error - prevError;
+    while (ArmOdom.get_angle() > (target + 0.1) || ArmOdom.get_angle() - (target + 0.1)) {
+        error = ArmOdom.get_angle() - target;
+        derivative = error - prevError;
 
 
-            Arm.move_velocity(ArmKp * error + ArmKd * derivative);
+        Arm.move_velocity(ArmKp * error + ArmKd * derivative);
 
 
-            prevError = error;
-            pros::delay(10);
-           
-        } else {
-            Arm.brake();
-            break;
-        }
+        prevError = error;
+        pros::delay(10);
     }
 }
 
 void ArmControl() {
-    Arm.tare_position();
     Arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    //ArmOdom.reset();
 
-    int ArmLoadPos = 40;
+    int ArmLoadPos = 4000;
     int ArmTipPos = 180;
   
     while (true) { 
+        
 
-        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_Y)) {
-            ArmPIDtoPosition(ArmTipPos);
+        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
+            //ArmPIDtoPosition(ArmTipPos);
             
-        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && ArmOdom.get_position() < ArmLoadPos) {
+        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT) && (ArmOdom.get_angle() < ArmLoadPos)) {
             ArmPIDtoPosition(ArmLoadPos);
 
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
-            ArmPIDtoPosition(0);
+            //ArmPIDtoPosition(0);
             
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
             Arm.move_velocity(200);
@@ -297,24 +292,24 @@ void FuncIntake() {
     int IntakeSpeed = 100; //100 for skills, 90 regular
     while (true) {
         if (IntakeHook.get_actual_velocity() == 0 && IntakeToggle == -1) {
-            IntakeHook.move_velocity(IntakeSpeed * -2);
+            IntakeHook.move_velocity(IntakeSpeed * -6);
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
             while (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
                 IntakeFlex.move_velocity(IntakeSpeed * -2);
-                IntakeHook.move_velocity(IntakeSpeed * -2);
+                IntakeHook.move_velocity(IntakeSpeed * -6);
             }
             if (IntakeToggle == 1) {
                 IntakeFlex.brake();
                 IntakeHook.brake();
             } else {
                 IntakeFlex.move_velocity(IntakeSpeed * 2);
-                IntakeHook.move_velocity(IntakeSpeed * 2);
+                IntakeHook.move_velocity(IntakeSpeed * 6);
             }
 
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
             if (IntakeToggle == 1) {
                 IntakeFlex.move_velocity(IntakeSpeed * 2);
-                IntakeHook.move_velocity(IntakeSpeed * 2);
+                IntakeHook.move_velocity(IntakeSpeed * 6);
             } else {
                 IntakeFlex.brake();
                 IntakeHook.brake();
@@ -326,7 +321,7 @@ void FuncIntake() {
             pros::delay(500);
         } else if (IntakeToggle == -1) {
             IntakeFlex.move_velocity(IntakeSpeed * 2);
-            IntakeHook.move_velocity(IntakeSpeed * 2);
+            IntakeHook.move_velocity(IntakeSpeed * 6);
             pros::delay(10);
         }
         pros::delay(10);
@@ -409,13 +404,15 @@ void opcontrol() { //Driver
     VSensor.set_led_pwm(100);
     while (true) {
         rgb_value = VSensor.get_rgb();
-        pros::screen::print(TEXT_MEDIUM, 1, "Red value: %lf \n", rgb_value.red);
-        pros::screen::print(TEXT_MEDIUM, 2, "Green value: %lf \n", rgb_value.green);
-        pros::screen::print(TEXT_MEDIUM, 3, "Blue value: %lf \n", rgb_value.blue);
+        // pros::screen::print(TEXT_MEDIUM, 1, "Red value: %lf \n", rgb_value.red);
+        // pros::screen::print(TEXT_MEDIUM, 2, "Green value: %lf \n", rgb_value.green);
+        // pros::screen::print(TEXT_MEDIUM, 3, "Blue value: %lf \n", rgb_value.blue);
 
-        pros::screen::print(TEXT_MEDIUM, 0, "X: %lf \n", chassis.getPose().x);
-        pros::screen::print(TEXT_MEDIUM, 1, "Y: %lf \n", chassis.getPose().y);
-        pros::screen::print(TEXT_MEDIUM, 4, "Heading: %lf \n", chassis.getPose().theta);
+        pros::screen::print(TEXT_MEDIUM, 1, "X: %lf \n", chassis.getPose().x);
+        pros::screen::print(TEXT_MEDIUM, 2, "Y: %lf \n", chassis.getPose().y);
+        pros::screen::print(TEXT_MEDIUM, 3, "Heading: %lf \n", chassis.getPose().theta);
+
+        pros::screen::print(TEXT_MEDIUM, 5, "Arm Position: %f", ArmOdom.get_position());
 
         //pros::screen::print(TEXT_MEDIUM, 4, "Proximity value: %ld \n", VSensor.get_proximity());
         pros::delay(20);
