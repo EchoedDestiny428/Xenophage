@@ -4,7 +4,7 @@
 //----------------------------------------------------------------------------------Device Setup----------------------------------------------------------------------------------
 //--START Device Setup--
 
-pros::MotorGroup Left ({-20, -16, 13}, pros::MotorGears::blue);
+pros::MotorGroup Left ({-20, -16, 11}, pros::MotorGears::blue);
 pros::MotorGroup Right ({14, 18, -17}, pros::MotorGears::blue);
 pros::Motor Arm (4, pros::MotorGears::green);
 pros::Motor IntakeFlex (-2, pros::MotorGears::green);
@@ -19,11 +19,11 @@ pros::adi::DigitalOut MobileGoal('B');
 pros::adi::DigitalOut Doinker('A');
 pros::adi::DigitalOut Hang('F');
 
-pros::Rotation ArmOdom(3);
-pros::Optical VSensor(4); //wrong
+pros::Rotation LadyBrownOdom(3);
+pros::Optical VSensor(9); //wrong
 pros::Imu Inertial(10); //wrong
-pros::Rotation HorizontalEnc(6);
-pros::Rotation VerticalEnc(-12);
+pros::Rotation HorizontalEnc(-12);
+pros::Rotation VerticalEnc(6);
 
 lemlib::TrackingWheel Horizontal(&HorizontalEnc, lemlib::Omniwheel::NEW_2, 0.6); //change
 lemlib::TrackingWheel Vertical(&VerticalEnc, lemlib::Omniwheel::NEW_2, 0.0);
@@ -78,44 +78,26 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 
 //--END Device Setup-- 
 
-void on_center_button() {
-	static bool pressed = false;
-	pressed = !pressed;
-	if (pressed) {
-		pros::lcd::set_text(2, "I was pressed!");
-	} else {
-		pros::lcd::clear_line(2);
-	}
-}
-
 
 
 void initialize() {
-    pros::lcd::initialize(); // initialize brain screen
-    chassis.calibrate(); // calibrate sensors
+    pros::lcd::initialize();
+    chassis.calibrate();
+    LadyBrownOdom.set_position(0);
     
-
-    // the default rate is 50. however, if you need to change the rate, you
-    // can do the following.
-    // lemlib::bufferedStdout().setRate(...);
-    // If you use bluetooth or a wired connection, you will want to have a rate of 10ms
-
-    // for more information on how the formatting for the loggers
-    // works, refer to the fmtlib docs
-
-    // thread to for brain screen and position logging
     pros::Task screenTask([&]() {
         while (true) {
             // print robot location to the brain screen
             pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
             pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
             pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
-            // log position telemetry
-            lemlib::telemetrySink()->info("Chassis pose: {}", chassis.getPose());
+            
+            pros::lcd::print(3, "Arm Position: %f", LadyBrownOdom.get_position());
             // delay to save resources
             pros::delay(50);
         }
     });
+    
 }
 
 void disabled() {  //well disable on bot enable
@@ -161,10 +143,7 @@ void AutoEject() {
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-  //pros::rtos::Task TaskAutoEject(AutoEject); //TURN OFF FOR SKILLS!!!!!!!!!!
 
-  
-  //VSensor.set_led_pwm(100);
 
   pros::delay(20);
 
@@ -223,6 +202,8 @@ void ChassisControl() {
       chassis.moveToPoint(0, -6, 800, {.minSpeed = 127});
       chassis.waitUntilDone();
     }
+
+    pros::delay(20); // Run for 20 ms then update
   }
 }
 
@@ -235,8 +216,8 @@ void ArmPIDtoPosition(double target) {
     int prevError;
     int derivative;
 
-    while (ArmOdom.get_angle() > (target + 0.1) || ArmOdom.get_angle() - (target + 0.1)) {
-        error = ArmOdom.get_angle() - target;
+    while (LadyBrownOdom.get_angle() > (target + 0.1) || LadyBrownOdom.get_angle() - (target + 0.1)) {
+        error = LadyBrownOdom.get_angle() - target;
         derivative = error - prevError;
 
 
@@ -250,7 +231,8 @@ void ArmPIDtoPosition(double target) {
 
 void ArmControl() {
     Arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    //ArmOdom.reset();
+    LadyBrownOdom.set_position(0);
+    //LadyBrownOdom.reverse();
 
     int ArmLoadPos = 4000;
     int ArmTipPos = 180;
@@ -261,7 +243,7 @@ void ArmControl() {
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
             //ArmPIDtoPosition(ArmTipPos);
             
-        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT) && (ArmOdom.get_angle() < ArmLoadPos)) {
+        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT) && (LadyBrownOdom.get_position() < ArmLoadPos)) {
             ArmPIDtoPosition(ArmLoadPos);
 
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
@@ -271,7 +253,7 @@ void ArmControl() {
             Arm.move_velocity(200);
 
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
-            if (ArmOdom.get_position() > 2) {
+            if (LadyBrownOdom.get_position() > 2) {
                 Arm.move_velocity(-200);
             } else {
                 Arm.brake();
@@ -292,7 +274,7 @@ void FuncIntake() {
     int IntakeSpeed = 100; //100 for skills, 90 regular
     while (true) {
         if (IntakeHook.get_actual_velocity() == 0 && IntakeToggle == -1) {
-            IntakeHook.move_velocity(IntakeSpeed * -6);
+            IntakeHook.move_velocity(IntakeSpeed * -2);
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
             while (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
                 IntakeFlex.move_velocity(IntakeSpeed * -2);
@@ -324,22 +306,26 @@ void FuncIntake() {
             IntakeHook.move_velocity(IntakeSpeed * 6);
             pros::delay(10);
         }
-        pros::delay(10);
+        pros::delay(20);
     }
 }
 
 void FuncIntakeLift() {
     int IntakeLiftToggle = 1;
-    if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT) && !skillz) {
-        if (IntakeLiftToggle == 1) {
-            Lift.set_value(4096);
-            pros::delay(500);
-        } else {
-            Lift.set_value(0);
+    while (true) {
+        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT) && !skillz) {
+            if (IntakeLiftToggle == 1) {
+                Lift.set_value(4096);
+                pros::delay(500);
+            } else {
+                Lift.set_value(0);
+                pros::delay(500);
+            }
+            IntakeLiftToggle *= -1;
             pros::delay(500);
         }
-        IntakeLiftToggle *= -1;
-        pros::delay(500);
+
+        pros::delay(20);
     }
 }
 
@@ -400,21 +386,10 @@ void opcontrol() { //Driver
 
 
 
-    pros::c::optical_rgb_s_t rgb_value;
-    VSensor.set_led_pwm(100);
+    
     while (true) {
-        rgb_value = VSensor.get_rgb();
-        // pros::screen::print(TEXT_MEDIUM, 1, "Red value: %lf \n", rgb_value.red);
-        // pros::screen::print(TEXT_MEDIUM, 2, "Green value: %lf \n", rgb_value.green);
-        // pros::screen::print(TEXT_MEDIUM, 3, "Blue value: %lf \n", rgb_value.blue);
+        
 
-        pros::screen::print(TEXT_MEDIUM, 1, "X: %lf \n", chassis.getPose().x);
-        pros::screen::print(TEXT_MEDIUM, 2, "Y: %lf \n", chassis.getPose().y);
-        pros::screen::print(TEXT_MEDIUM, 3, "Heading: %lf \n", chassis.getPose().theta);
-
-        pros::screen::print(TEXT_MEDIUM, 5, "Arm Position: %f", ArmOdom.get_position());
-
-        //pros::screen::print(TEXT_MEDIUM, 4, "Proximity value: %ld \n", VSensor.get_proximity());
-        pros::delay(20);
+		pros::delay(20);                               // Run for 20 ms then update
     }
 }
