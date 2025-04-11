@@ -4,9 +4,9 @@
 //----------------------------------------------------------------------------------Device Setup----------------------------------------------------------------------------------
 //--START Device Setup--
 
-pros::MotorGroup Left ({-20, -16, 11}, pros::MotorGears::blue);
+pros::MotorGroup Left ({-20, 13, -11}, pros::MotorGears::blue);
 pros::MotorGroup Right ({14, 18, -17}, pros::MotorGears::blue);
-pros::Motor Arm (4, pros::MotorGears::green);
+pros::Motor Arm (8, pros::MotorGears::green);
 pros::Motor IntakeFlex (-2, pros::MotorGears::green);
 pros::Motor IntakeHook (-1, pros::MotorGears::blue);
 
@@ -19,13 +19,13 @@ pros::adi::DigitalOut MobileGoal('B');
 pros::adi::DigitalOut Doinker('A');
 pros::adi::DigitalOut Hang('F');
 
-pros::Rotation LadyBrownOdom(3);
+pros::Rotation LadyBrownOdom(-3);
 pros::Optical VSensor(9); //wrong
 pros::Imu Inertial(10); //wrong
-pros::Rotation HorizontalEnc(-12);
-pros::Rotation VerticalEnc(6);
+pros::Rotation HorizontalEnc(6);
+pros::Rotation VerticalEnc(-12);
 
-lemlib::TrackingWheel Horizontal(&HorizontalEnc, lemlib::Omniwheel::NEW_2, 0.6); //change
+lemlib::TrackingWheel Horizontal(&HorizontalEnc, lemlib::Omniwheel::NEW_2, 0.0); //change
 lemlib::TrackingWheel Vertical(&VerticalEnc, lemlib::Omniwheel::NEW_2, 0.0);
 
 // drivetrain settings
@@ -78,21 +78,24 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 
 //--END Device Setup-- 
 
-
+double ArmPos() {
+    double armPos = LadyBrownOdom.get_position()/100.000;
+    return armPos;
+}
 
 void initialize() {
     pros::lcd::initialize();
     chassis.calibrate();
-    LadyBrownOdom.set_position(0);
+    LadyBrownOdom.reset_position();
     
     pros::Task screenTask([&]() {
         while (true) {
             // print robot location to the brain screen
-            pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
-            pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
-            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+            pros::lcd::print(0, "------------X: %f", chassis.getPose().x); // x
+            pros::lcd::print(1, "------------Y: %f", chassis.getPose().y); // y
+            pros::lcd::print(2, "------------Theta: %f", chassis.getPose().theta); // heading
             
-            pros::lcd::print(3, "Arm Position: %f", LadyBrownOdom.get_position());
+            pros::lcd::print(5, "--------Arm Position: %f", ArmPos());
             // delay to save resources
             pros::delay(50);
         }
@@ -209,51 +212,65 @@ void ChassisControl() {
 
 //--------------------------------------------------------------------------------Arm--------------------------------------------------------------------------------
 
-void ArmPIDtoPosition(double target) {
-    int ArmKp = 0.5; // Proportional Modifier
-    int ArmKd = 0.0; // Derivative Modifier
-    int error;
-    int prevError;
-    int derivative;
 
-    while (LadyBrownOdom.get_angle() > (target + 0.1) || LadyBrownOdom.get_angle() - (target + 0.1)) {
-        error = LadyBrownOdom.get_angle() - target;
+
+void ArmPIDtoPosition(double target) {
+    double ArmKp = 4.00; // Proportional Modifier
+    double ArmKd = 3.20; // Derivative Modifier
+    double error;
+    double prevError = 0;
+    double derivative = 0;
+
+    while ((ArmPos() > (target + 0.4)) || (ArmPos() < (target - 0.4))) {
+        error = target - ArmPos();
         derivative = error - prevError;
 
+        pros::lcd::print(6, "-----------Arm Error: %f", error);
 
-        Arm.move_velocity(ArmKp * error + ArmKd * derivative);
+        Arm.move_velocity((ArmKp * error) + (ArmKd * derivative)); // PID Control
 
 
         prevError = error;
-        pros::delay(10);
+        
+        pros::delay(20);
+
+        if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) && (ArmPos() > 5)) {
+            break;
+        }
+    }
+    Arm.brake();
+    pros::delay(100);
+    if ((ArmPos() > (target + 0.4)) || (ArmPos() < (target - 0.4))) {
+        ArmKp = 8.00;
+        ArmPIDtoPosition(target);
+    } else {
+        Arm.brake();
+        ArmKp = 4.00;
     }
 }
 
 void ArmControl() {
-    Arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    LadyBrownOdom.set_position(0);
+    Arm.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     //LadyBrownOdom.reverse();
 
-    int ArmLoadPos = 4000;
-    int ArmTipPos = 180;
+    double ArmLoadPos = 26.00;
+    double ArmTipPos = 180.00;
   
     while (true) { 
-        
-
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
-            //ArmPIDtoPosition(ArmTipPos);
+            ArmPIDtoPosition(ArmTipPos);
             
-        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT) && (LadyBrownOdom.get_position() < ArmLoadPos)) {
+        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && (ArmPos() < (ArmLoadPos-10.0))) {
             ArmPIDtoPosition(ArmLoadPos);
 
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
-            //ArmPIDtoPosition(0);
+            ArmPIDtoPosition(5.00);
             
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
             Arm.move_velocity(200);
 
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
-            if (LadyBrownOdom.get_position() > 2) {
+            if (ArmPos() > 5) {
                 Arm.move_velocity(-200);
             } else {
                 Arm.brake();
