@@ -13,11 +13,11 @@ pros::Motor IntakeHook (-1, pros::MotorGears::blue);
 pros::Controller ParaRAID(pros::E_CONTROLLER_MASTER);
 
 
-pros::adi::DigitalOut Lift('D');
-pros::adi::DigitalOut Eject('E');
-pros::adi::DigitalOut MobileGoal('B');
-pros::adi::DigitalOut Doinker('A');
-pros::adi::DigitalOut Hang('F');
+pros::adi::DigitalOut Lift('B');
+pros::adi::DigitalOut Eject('H'); //doesn't exist
+pros::adi::DigitalOut MobileGoal('E');
+pros::adi::DigitalOut DoinkerLeft('A');
+pros::adi::DigitalOut DoinkerRight('D');
 
 pros::Rotation LadyBrownOdom(-3);
 pros::Optical VSensor(9); //wrong
@@ -158,70 +158,65 @@ void autonomous() {
 //--------------------------------------------------------------------------------Doinker--------------------------------------------------------------------------------
 
 void DoinkerControl() {
-  int DoinkerToggle = 1;
-  while (true) {
-    if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
-      if (DoinkerToggle == 1) {
-        Doinker.set_value(4096);
-      } else {
-        Doinker.set_value(0);
-      }
-      DoinkerToggle *= -1;
-      pros::delay(500);
+    int DoinkerLeftToggle = 1;
+    int DoinkerRightToggle = 1;
+    while (true) {
+        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
+            if (DoinkerLeftToggle == 1) {
+                DoinkerLeft.set_value(4096);
+            } else {
+                DoinkerLeft.set_value(0);
+            }
+            DoinkerLeftToggle *= -1;
+            pros::delay(500);
+        }
+        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
+            if (DoinkerRightToggle == 1) {
+                DoinkerRight.set_value(0);
+            } else {
+                DoinkerRight.set_value(4096);
+            }
+            DoinkerRightToggle *= -1;
+            pros::delay(500);
+        }
+        pros::delay(10);
     }
-    pros::delay(10);
-  }
 }
 
-//--------------------------------------------------------------------------------Hang--------------------------------------------------------------------------------
-
-void HangControl() {
-  int HangToggle = 1;
-  while (true) {
-    if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
-      if (HangToggle == 1) {
-        Hang.set_value(4096);
-      } else {
-        Hang.set_value(0);
-      }
-      HangToggle *= -1;
-      pros::delay(300);
-    }
-    pros::delay(10);
-  }
-}
 
 //--------------------------------------------------------------------------------Chassis--------------------------------------------------------------------------------
 
 void ChassisControl() {
-  while (true) {
-    int leftY = ParaRAID.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-    int rightX = ParaRAID.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+    while (true) {
+        int leftY = ParaRAID.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+        int rightX = ParaRAID.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
-    chassis.arcade(leftY*1.1, rightX);
+        chassis.arcade(leftY*1.1, rightX);
 
-    if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
-      chassis.setPose(0, 0, 0);
-      chassis.moveToPoint(0, -6, 800, {.minSpeed = 127});
-      chassis.waitUntilDone();
+        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
+            chassis.setPose(0, 0, 0);
+            chassis.moveToPoint(0, -6, 800, {.minSpeed = 127});
+            chassis.waitUntilDone();
+        }
+
+        pros::delay(20); // Run for 20 ms then update
     }
-
-    pros::delay(20); // Run for 20 ms then update
-  }
 }
 
 //--------------------------------------------------------------------------------Arm--------------------------------------------------------------------------------
 
 
+double ArmKp = 4.00; // Proportional Modifier
+double ArmKd = 3.20; // Derivative Modifier
+double error;
+double prevError = 0;
+double derivative = 0;
+
 
 void ArmPIDtoPosition(double target) {
-    double ArmKp = 4.00; // Proportional Modifier
-    double ArmKd = 3.20; // Derivative Modifier
-    double error;
-    double prevError = 0;
-    double derivative = 0;
+    
 
-    while ((ArmPos() > (target + 0.4)) || (ArmPos() < (target - 0.4))) {
+    while ((ArmPos() > (target + 0.5)) || (ArmPos() < (target - 0.5))) {
         error = target - ArmPos();
         derivative = error - prevError;
 
@@ -234,47 +229,47 @@ void ArmPIDtoPosition(double target) {
         
         pros::delay(20);
 
-        if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) && (ArmPos() > 5)) {
-            break;
+        if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2))) {
+            goto exit;
         }
     }
     Arm.brake();
-    pros::delay(100);
-    if ((ArmPos() > (target + 0.4)) || (ArmPos() < (target - 0.4))) {
-        ArmKp = 8.00;
-        ArmPIDtoPosition(target);
-    } else {
-        Arm.brake();
-        ArmKp = 4.00;
-    }
+    //pros::delay(100);
+    // if ((ArmPos() > (target + 0.5)) || (ArmPos() < (target - 0.5))) {
+    //     ArmPIDtoPosition(target);
+    // } else {
+    //     Arm.brake();
+    //     ArmKp = 4.00;
+    // }
+
+    exit:
 }
 
 void ArmControl() {
-    Arm.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    Arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     //LadyBrownOdom.reverse();
 
-    double ArmLoadPos = 26.00;
+    double ArmLoadPos = 27.50;
     double ArmTipPos = 180.00;
   
     while (true) { 
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
             ArmPIDtoPosition(ArmTipPos);
             
-        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && (ArmPos() < (ArmLoadPos-10.0))) {
+        } else if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && (ArmPos() < (ArmLoadPos-10.0))) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
             ArmPIDtoPosition(ArmLoadPos);
 
-        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
-            ArmPIDtoPosition(5.00);
+        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
+            ArmPIDtoPosition(3.00);
             
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
             Arm.move_velocity(200);
 
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
-            if (ArmPos() > 5) {
-                Arm.move_velocity(-200);
-            } else {
-                Arm.brake();
-            }
+            Arm.move_velocity(-200);
+            if (ArmPos() < 0) {
+                LadyBrownOdom.reset_position();
+            } 
         } else {
             Arm.brake();
         }
@@ -312,8 +307,7 @@ void FuncIntake() {
             } else {
                 IntakeFlex.brake();
                 IntakeHook.brake();
-                IntakeFlex.move_relative(-30, 180);
-                IntakeHook.move_relative(-30, 180);
+                IntakeHook.move_relative(-100, 600);
                 pros::delay(50);
             }
             IntakeToggle *= -1;
@@ -398,10 +392,7 @@ void opcontrol() { //Driver
     pros::rtos::Task TaskFuncMogo(FuncMogo);
     pros::rtos::Task TaskEject(DriverEject);
     pros::rtos::Task TaskDoiner(DoinkerControl);
-    pros::rtos::Task TaskHang(HangControl);
     pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
-
-
 
     
     while (true) {
