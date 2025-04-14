@@ -4,7 +4,7 @@
 //----------------------------------------------------------------------------------Device Setup----------------------------------------------------------------------------------
 //--START Device Setup--
 
-pros::MotorGroup Left ({-20, 13, -11}, pros::MotorGears::blue);
+pros::MotorGroup Left ({-20, 13, -9}, pros::MotorGears::blue);
 pros::MotorGroup Right ({14, 18, -17}, pros::MotorGears::blue);
 pros::Motor Arm (8, pros::MotorGears::green);
 pros::Motor IntakeFlex (-2, pros::MotorGears::green);
@@ -20,8 +20,8 @@ pros::adi::DigitalOut DoinkerLeft('A');
 pros::adi::DigitalOut DoinkerRight('D');
 
 pros::Rotation LadyBrownOdom(-3);
-pros::Optical VSensor(9); //wrong
-pros::Imu Inertial(10); //wrong
+pros::Optical VSensor(4);
+pros::Imu Inertial(10); 
 pros::Rotation HorizontalEnc(6);
 pros::Rotation VerticalEnc(-12);
 
@@ -32,7 +32,7 @@ lemlib::TrackingWheel Vertical(&VerticalEnc, lemlib::Omniwheel::NEW_2, 0.0);
 lemlib::Drivetrain drivetrain(&Left, &Right, 12.8, lemlib::Omniwheel::NEW_325, 450, 2); //left right track width, wheel type, rpm, drift
 
 // Forward PID
-lemlib::ControllerSettings linearController(8,  // proportional gain (kP)
+lemlib::ControllerSettings linearController(6,  // proportional gain (kP)
                                             0, // integral gain (kI)
                                             12, // derivative gain (kD)
                                             1, // anti windup
@@ -43,8 +43,8 @@ lemlib::ControllerSettings linearController(8,  // proportional gain (kP)
                                             0 // maximum acceleration (slew)
 );
 // Turn PID
-lemlib::ControllerSettings angularController(4.8, // proportional gain (kP)
-                                             0.6, // integral gain (kI)
+lemlib::ControllerSettings angularController(4.0, // proportional gain (kP)
+                                             0.0, // integral gain (kI)
                                              35, // derivative gain (kD)
                                              3, // anti windup
                                              1, // small error range, in degrees
@@ -100,7 +100,6 @@ void initialize() {
             pros::delay(50);
         }
     });
-    
 }
 
 void disabled() {  //well disable on bot enable
@@ -126,34 +125,39 @@ bool DontEject = false;
 bool EjectStay = false;
 
 
-void AutoEject() {
-  pros::c::optical_rgb_s_t rgb_value;
-  while (true) {
-    rgb_value = VSensor.get_rgb();
-    if (!TeamColor && (rgb_value.blue > 172) && (rgb_value.red < 230)) {
-      Eject.set_value(4096);
-      pros::delay(500);
-    } else if (TeamColor && (rgb_value.red > 230) && (rgb_value.blue < 180)) {
-      Eject.set_value(4096);
-      pros::delay(500);
-    } else if (!EjectStay) {
-      Eject.set_value(0);
-    }
-    pros::delay(5);
-  }
-}
+// void AutoEject() {
+//     while (true) {
+//         int opticalHue = VSensor.get_hue();
+//         pros::lcd::print(3, "------------Optical Hue: %f", opticalHue);
+//         // if (!TeamColor && (rgb_value.blue > 172) && (rgb_value.red < 230)) {
+//         //     Eject.set_value(4096);
+//         //     pros::delay(500);
+//         // } else if (TeamColor && (rgb_value.red > 230) && (rgb_value.blue < 180)) {
+//         //     Eject.set_value(4096);
+//         //     pros::delay(500);
+//         // } else if (!EjectStay) {
+//         //     Eject.set_value(0);
+//         // }
+//         pros::delay(5);
+//     }
+// }
 
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
+    chassis.setPose(0, 0, 0);
+    chassis.turnToHeading(90, 1000);
+    chassis.turnToHeading(180, 1000);
+    chassis.turnToHeading(-90, 1000);
+    chassis.turnToHeading(0, 1000);
 
+    pros::delay(20);
 
-  pros::delay(20);
-
-  //rip no autonomous :)
+    //rip no autonomous :)
 
 
 }
+
 
 //--------------------------------------------------------------------------------Doinker--------------------------------------------------------------------------------
 
@@ -161,7 +165,7 @@ void DoinkerControl() {
     int DoinkerLeftToggle = 1;
     int DoinkerRightToggle = 1;
     while (true) {
-        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
+        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
             if (DoinkerLeftToggle == 1) {
                 DoinkerLeft.set_value(4096);
             } else {
@@ -170,7 +174,7 @@ void DoinkerControl() {
             DoinkerLeftToggle *= -1;
             pros::delay(500);
         }
-        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
+        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_Y)) {
             if (DoinkerRightToggle == 1) {
                 DoinkerRight.set_value(0);
             } else {
@@ -253,13 +257,13 @@ void ArmControl() {
     double ArmTipPos = 180.00;
   
     while (true) { 
-        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
+        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
             ArmPIDtoPosition(ArmTipPos);
             
         } else if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && (ArmPos() < (ArmLoadPos-10.0))) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
             ArmPIDtoPosition(ArmLoadPos);
 
-        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
+        } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
             ArmPIDtoPosition(3.00);
             
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
@@ -364,19 +368,24 @@ void FuncMogo() {
 //--------------------------------------------------------------------------------Eject--------------------------------------------------------------------------------
 
 void DriverEject() {
-    pros::c::optical_rgb_s_t rgb_value;
     while (true) {
-        rgb_value = VSensor.get_rgb();
-        if (!TeamColor && (rgb_value.blue > 180) && (rgb_value.red < 230) && (MogoToggle == -1)) {
-            Eject.set_value(4096);
-            pros::delay(500);
-        } else if (TeamColor && (rgb_value.red > 230) && (rgb_value.blue < 180) && (MogoToggle == -1)) {
-            Eject.set_value(4096);
-            pros::delay(500);
-        } else if (!EjectStay) {
-            Eject.set_value(0);
+        int opticalHue = VSensor.get_hue();
+        pros::lcd::print(3, "------------Optical Hue: %d", opticalHue);
+        //red = 30-50
+        //blue = 100-150
+
+        if (!TeamColor && (opticalHue > 100) && (MogoToggle == -1)) {
+            pros::delay(100);
+            IntakeHook.brake();
+            pros::delay(600);
+            IntakeHook.move_velocity(600);
+        } else if ((opticalHue < 50) && (MogoToggle == -1)) {
+            pros::delay(300);
+            IntakeHook.brake();
+            pros::delay(600);
+            IntakeHook.move_velocity(600);
         }
-        pros::delay(5);
+        pros::delay(10);
     }
 }
 
@@ -392,7 +401,7 @@ void opcontrol() { //Driver
     pros::rtos::Task TaskFuncMogo(FuncMogo);
     pros::rtos::Task TaskEject(DriverEject);
     pros::rtos::Task TaskDoiner(DoinkerControl);
-    pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
+    //pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
 
     
     while (true) {
