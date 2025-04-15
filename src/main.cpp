@@ -179,13 +179,13 @@ void ChassisControl() {
 
 
 
-void ArmPIDtoPosition(double target) {
+void ArmPIDtoPosition(double target, double timeout) {
     double ArmKp = 4.00; // Proportional Modifier
     double ArmKd = 3.20; // Derivative Modifier
     double error;
     double prevError = 0;
     double derivative = 0;
-
+    double repeated = 0;
 
     while ((ArmPos() > (target + 0.5)) || (ArmPos() < (target - 0.5))) {
         error = target - ArmPos();
@@ -200,20 +200,16 @@ void ArmPIDtoPosition(double target) {
         
         pros::delay(20);
 
-        if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2))) {
+        if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) || ((repeated > (timeout/20)) && (timeout != 0))) {
             goto exit;
         }
-    }
-    Arm.brake();
-    //pros::delay(100);
-    // if ((ArmPos() > (target + 0.5)) || (ArmPos() < (target - 0.5))) {
-    //     ArmPIDtoPosition(target);
-    // } else {
-    //     Arm.brake();
-    //     ArmKp = 4.00;
-    // }
 
+        repeated += 1;
+
+    }
     exit:
+    Arm.brake();
+    repeated = 0;
 }
 
 double ArmLoadPos = 27.50;
@@ -225,10 +221,10 @@ void ArmControl() {
   
     while (true) { 
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
-            ArmPIDtoPosition(ScoreAlliancePos);
+            ArmPIDtoPosition(ScoreAlliancePos, 0);
             
         } else if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && (ArmPos() < (ArmLoadPos-10.0))) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
-            ArmPIDtoPosition(ArmLoadPos);
+            ArmPIDtoPosition(ArmLoadPos, 0);
 
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
             ArmPIDtoPosition(3.00);
