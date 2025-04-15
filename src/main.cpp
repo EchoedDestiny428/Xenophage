@@ -353,7 +353,7 @@ void DriverEject() {
 }
 //----------------------------------------------------------------------------------Auto Routes----------------------------------------------------------------------------------
 
-void Negative_A1_5R() {
+void Negative_A1() {
     chassis.setPose(12, -12, -120);
     LadyBrownOdom.set_position(ArmLoadPos);
     pros::delay(20);
@@ -361,7 +361,14 @@ void Negative_A1_5R() {
     ArmPIDtoPosition(ScoreAlliancePos, 500);
     chassis.moveToPoint(24, 0, 1000, {.forwards = false});
     chassis.moveToPoint(24, 24, 1000, {.forwards = false});
+}
 
+void Negative_A0() {
+    chassis.setPose(12, 0, 180);
+    chassis.moveToPoint(24, 24, 1000, {.forwards = false});
+}
+
+void Negative_5R() {
     MobileGoal.set_value(4095);
     chassis.turnToHeading(45, 1000);
     chassis.waitUntilDone();
@@ -390,7 +397,8 @@ void Negative_A1_5R() {
 }
 
 void Negative_A1_5R_TB() {
-    Negative_A1_5R();
+    Negative_A1();
+    Negative_5R();
 
     chassis.turnToPoint(12, 60, 1000);
     chassis.waitUntilDone();
@@ -400,7 +408,8 @@ void Negative_A1_5R_TB() {
 }
 
 void Negative_A1_5R_PC() {
-    Negative_A1_5R_TB();
+    Negative_A1();
+    Negative_5R();
 
     chassis.turnToPoint(0, 0, 1000);
     chassis.waitUntilDone();
