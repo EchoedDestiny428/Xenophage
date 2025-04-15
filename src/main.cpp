@@ -125,39 +125,6 @@ bool DontEject = false;
 bool EjectStay = false;
 
 
-// void AutoEject() {
-//     while (true) {
-//         int opticalHue = VSensor.get_hue();
-//         pros::lcd::print(3, "------------Optical Hue: %f", opticalHue);
-//         // if (!TeamColor && (rgb_value.blue > 172) && (rgb_value.red < 230)) {
-//         //     Eject.set_value(4096);
-//         //     pros::delay(500);
-//         // } else if (TeamColor && (rgb_value.red > 230) && (rgb_value.blue < 180)) {
-//         //     Eject.set_value(4096);
-//         //     pros::delay(500);
-//         // } else if (!EjectStay) {
-//         //     Eject.set_value(0);
-//         // }
-//         pros::delay(5);
-//     }
-// }
-
-//----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
-
-void autonomous() {
-    chassis.setPose(0, 0, 0);
-    chassis.turnToHeading(90, 1000);
-    chassis.turnToHeading(180, 1000);
-    chassis.turnToHeading(-90, 1000);
-    chassis.turnToHeading(0, 1000);
-
-    pros::delay(20);
-
-    //rip no autonomous :)
-
-
-}
-
 
 //--------------------------------------------------------------------------------Doinker--------------------------------------------------------------------------------
 
@@ -210,15 +177,15 @@ void ChassisControl() {
 //--------------------------------------------------------------------------------Arm--------------------------------------------------------------------------------
 
 
-double ArmKp = 4.00; // Proportional Modifier
-double ArmKd = 3.20; // Derivative Modifier
-double error;
-double prevError = 0;
-double derivative = 0;
 
 
 void ArmPIDtoPosition(double target) {
-    
+    double ArmKp = 4.00; // Proportional Modifier
+    double ArmKd = 3.20; // Derivative Modifier
+    double error;
+    double prevError = 0;
+    double derivative = 0;
+
 
     while ((ArmPos() > (target + 0.5)) || (ArmPos() < (target - 0.5))) {
         error = target - ArmPos();
@@ -249,16 +216,16 @@ void ArmPIDtoPosition(double target) {
     exit:
 }
 
+double ArmLoadPos = 27.50;
+double ArmTipPos = 180.00;
+double ScoreAlliancePos = 186.00;
+
 void ArmControl() {
     Arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    //LadyBrownOdom.reverse();
-
-    double ArmLoadPos = 27.50;
-    double ArmTipPos = 180.00;
   
     while (true) { 
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
-            ArmPIDtoPosition(ArmTipPos);
+            ArmPIDtoPosition(ScoreAlliancePos);
             
         } else if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && (ArmPos() < (ArmLoadPos-10.0))) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
             ArmPIDtoPosition(ArmLoadPos);
@@ -388,8 +355,28 @@ void DriverEject() {
         pros::delay(10);
     }
 }
+//----------------------------------------------------------------------------------AutoRoutes----------------------------------------------------------------------------------
+
+void NegativeStandard() {
+    chassis.setPose(12, -12, -120);
+    LadyBrownOdom.set_position(ArmLoadPos);
+    pros::delay(20);
+
+    ArmPIDtoPosition(ScoreAlliancePos);
+    pros::delay(500);
+    
+    chassis.moveToPoint(24, 0, 1000);
+}
+
+//----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
+
+void autonomous() {
+    
+
+    NegativeStandard();
 
 
+}
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
 
