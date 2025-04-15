@@ -227,7 +227,7 @@ void ArmControl() {
             ArmPIDtoPosition(ArmLoadPos, 0);
 
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
-            ArmPIDtoPosition(3.00);
+            ArmPIDtoPosition(3.00, 0);
             
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
             Arm.move_velocity(200);
@@ -351,17 +351,47 @@ void DriverEject() {
         pros::delay(10);
     }
 }
-//----------------------------------------------------------------------------------AutoRoutes----------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------Auto Routes----------------------------------------------------------------------------------
 
-void NegativeStandard() {
+void Negative_A1_5R_TB() {
     chassis.setPose(12, -12, -120);
     LadyBrownOdom.set_position(ArmLoadPos);
     pros::delay(20);
 
-    ArmPIDtoPosition(ScoreAlliancePos);
+    ArmPIDtoPosition(ScoreAlliancePos, 500);
+    chassis.moveToPoint(24, 0, 1000, {.forwards = false});
+    chassis.moveToPoint(24, 24, 1000, {.forwards = false});
+
+    MobileGoal.set_value(4095);
+    chassis.turnToHeading(45, 1000);
+    chassis.waitUntilDone();
+
+    IntakeHook.move_velocity(600);
+    IntakeFlex.move_velocity(200);
+
+    chassis.moveToPoint(43, 43, 1000);
+    chassis.turnToPoint(50, 45, 1000);
+    chassis.moveToPoint(50, 45, 1000);
+
+    chassis.moveToPoint(48, 24, 1000);
+    chassis.moveToPoint(72, -24, 2000, {.minSpeed = 80});
+    chassis.moveToPoint(60, 0, 500, {.forwards = false, .maxSpeed = 80});
+    chassis.waitUntilDone();
+
+    Lift.set_value(4095);
     pros::delay(500);
+
+    chassis.moveToPoint(72, -24, 2000, {.minSpeed = 80});
+    pros::delay(1000);
     
-    chassis.moveToPoint(24, 0, 1000);
+    IntakeFlex.move_velocity(-200);
+    
+    chassis.moveToPoint(48, 24, 1000, {.forwards = false});
+    chassis.turnToPoint(12, 60, 1000);
+    chassis.waitUntilDone();
+    IntakeHook.brake();
+    IntakeFlex.brake();
+    chassis.moveToPoint(12, 60, 1000);
 }
 
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
@@ -369,7 +399,7 @@ void NegativeStandard() {
 void autonomous() {
     
 
-    NegativeStandard();
+    Negative_A1_5R_TB();
 
 
 }
