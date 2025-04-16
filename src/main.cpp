@@ -353,81 +353,127 @@ void DriverEject() {
 }
 //----------------------------------------------------------------------------------Auto Routes----------------------------------------------------------------------------------
 
-void Negative_A1() {
-    chassis.setPose(12, -12, -120);
-    LadyBrownOdom.set_position(ArmLoadPos);
-    pros::delay(20);
-
-    ArmPIDtoPosition(ScoreAlliancePos, 500);
-    chassis.moveToPoint(24, 0, 1000, {.forwards = false});
-    chassis.moveToPoint(24, 24, 1000, {.forwards = false});
-}
 
 void Negative_A0() {
     chassis.setPose(12, 0, 180);
     chassis.moveToPoint(24, 24, 1000, {.forwards = false});
+
+    chassis.waitUntilDone();
 }
 
-void Negative_5R() {
+
+void Negative_A1_5R_TB() {
+    chassis.setPose(12, -12, -120);
+    LadyBrownOdom.set_position(ArmLoadPos * 100);
+    pros::delay(20);
+
+    ArmPIDtoPosition(ScoreAlliancePos, 500);
+    chassis.moveToPoint(24, 24, 2000, {.forwards = false});
+    pros::delay(500);
+    ArmPIDtoPosition(3.00, 1000);
+
+    //-----------------------------------------------
+
+    chassis.waitUntilDone();
+
     MobileGoal.set_value(4095);
+    pros::delay(500);
     chassis.turnToHeading(45, 1000);
     chassis.waitUntilDone();
 
     IntakeHook.move_velocity(600);
     IntakeFlex.move_velocity(200);
 
-    chassis.moveToPoint(43, 43, 1000);
-    chassis.turnToPoint(50, 45, 1000);
-    chassis.moveToPoint(50, 45, 1000);
+    chassis.moveToPoint(35, 35, 2000);
+    chassis.swingToHeading(70, DriveSide::RIGHT, 1000);
+    chassis.moveToPoint(50, 37, 1000);
 
-    chassis.moveToPoint(48, 24, 1000);
-    chassis.moveToPoint(72, -24, 2000, {.minSpeed = 80});
-    chassis.moveToPoint(60, 0, 500, {.forwards = false, .maxSpeed = 80});
+    // chassis.moveToPoint(48, 24, 1000);
+    // chassis.moveToPoint(72, -24, 2000, {.minSpeed = 80});
+    // chassis.moveToPoint(60, 0, 500, {.forwards = false, .maxSpeed = 80});
+    // chassis.waitUntilDone();
+
+    // Lift.set_value(4095);
+    // pros::delay(500);
+
+    // chassis.moveToPoint(72, -24, 2000, {.minSpeed = 80});
+    // pros::delay(1000);
+    
+    // IntakeFlex.move_velocity(-200);
+    
+    // chassis.moveToPoint(48, 24, 1000, {.forwards = false});
+
     chassis.waitUntilDone();
 
-    Lift.set_value(4095);
-    pros::delay(500);
+    //-----------------------------------------------
 
-    chassis.moveToPoint(72, -24, 2000, {.minSpeed = 80});
-    pros::delay(1000);
-    
-    IntakeFlex.move_velocity(-200);
-    
-    chassis.moveToPoint(48, 24, 1000, {.forwards = false});
-}
-
-void Negative_A1_5R_TB() {
-    Negative_A1();
-    Negative_5R();
-
-    chassis.turnToPoint(12, 60, 1000);
-    chassis.waitUntilDone();
-    IntakeHook.brake();
-    IntakeFlex.brake();
-    chassis.moveToPoint(12, 60, 1000);
+    // chassis.turnToPoint(12, 60, 1000);
+    // chassis.waitUntilDone();
+    // IntakeHook.brake();
+    // IntakeFlex.brake();
+    // chassis.moveToPoint(12, 60, 1000);
 }
 
 void Negative_A1_5R_PC() {
-    Negative_A1();
-    Negative_5R();
+    chassis.setPose(12, -12, -120);
+    LadyBrownOdom.set_position(ArmLoadPos * 100);
+    pros::delay(20);
+
+    ArmPIDtoPosition(ScoreAlliancePos, 500);
+    chassis.moveToPoint(24, 24, 2000, {.forwards = false});
+    pros::delay(500);
+    ArmPIDtoPosition(3.00, 1000);
+
+    //-----------------------------------------------
+
+    chassis.waitUntilDone();
+
+    MobileGoal.set_value(4095);
+    pros::delay(500);
+    chassis.turnToHeading(45, 1000);
+    chassis.waitUntilDone();
+
+    IntakeHook.move_velocity(600);
+    IntakeFlex.move_velocity(200);
+
+    chassis.moveToPoint(35, 35, 2000);
+    chassis.swingToHeading(70, DriveSide::RIGHT, 1000);
+    chassis.moveToPoint(50, 37, 1000);
+
+    // chassis.moveToPoint(48, 24, 1000);
+    // chassis.moveToPoint(72, -24, 2000, {.minSpeed = 80});
+    // chassis.moveToPoint(60, 0, 500, {.forwards = false, .maxSpeed = 80});
+    // chassis.waitUntilDone();
+
+    // Lift.set_value(4095);
+    // pros::delay(500);
+
+    // chassis.moveToPoint(72, -24, 2000, {.minSpeed = 80});
+    // pros::delay(1000);
+    
+    // IntakeFlex.move_velocity(-200);
+    
+    // chassis.moveToPoint(48, 24, 1000, {.forwards = false});
+
+    chassis.waitUntilDone();
+
+    //-----------------------------------------------
 
     chassis.turnToPoint(0, 0, 1000);
     chassis.waitUntilDone();
     IntakeHook.brake();
     IntakeFlex.brake();
-    chassis.moveToPoint(-57, -2);
+    chassis.moveToPoint(-57, -2, 2000);
     pros::delay(800);
-    Doinker.set_value(4096);
+    DoinkerLeft.set_value(4096);
     chassis.turnToHeading(-45, 1000);
-    Doinker.set_value(0);
+    DoinkerLeft.set_value(0);
 }
 
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-
     Negative_A1_5R_TB();
-
 
 }
 
