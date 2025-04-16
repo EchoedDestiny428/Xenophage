@@ -368,13 +368,15 @@ void Negative_A1_5R_TB() {
     pros::delay(20);
 
     ArmPIDtoPosition(ScoreAlliancePos, 500);
-    chassis.moveToPoint(24, 24, 2000, {.forwards = false});
+    chassis.moveToPoint(24, 24, 1600, {.forwards = false});
     pros::delay(500);
-    ArmPIDtoPosition(3.00, 1000);
+    ArmPIDtoPosition(3.00, 650);
+
+    chassis.waitUntilDone();
 
     //-----------------------------------------------
 
-    chassis.waitUntilDone();
+    
 
     MobileGoal.set_value(4095);
     pros::delay(500);
@@ -384,9 +386,11 @@ void Negative_A1_5R_TB() {
     IntakeHook.move_velocity(600);
     IntakeFlex.move_velocity(200);
 
-    chassis.moveToPoint(35, 35, 2000);
-    chassis.swingToHeading(70, DriveSide::RIGHT, 1000);
-    chassis.moveToPoint(50, 37, 1000);
+    chassis.moveToPoint(36, 36, 1500);
+    chassis.swingToHeading(75, DriveSide::RIGHT, 700);
+    chassis.moveToPoint(48, 37, 1000, {.minSpeed = 100});
+
+    chassis.swingToHeading(-150, DriveSide::RIGHT, 1500);
 
     // chassis.moveToPoint(48, 24, 1000);
     // chassis.moveToPoint(72, -24, 2000, {.minSpeed = 80});
@@ -424,9 +428,11 @@ void Negative_A1_5R_PC() {
     pros::delay(500);
     ArmPIDtoPosition(3.00, 1000);
 
+    chassis.waitUntilDone();
+
     //-----------------------------------------------
 
-    chassis.waitUntilDone();
+    
 
     MobileGoal.set_value(4095);
     pros::delay(500);
