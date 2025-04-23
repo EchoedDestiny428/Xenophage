@@ -436,7 +436,7 @@ void SoloAWP() {
 //----------------------Positive----------------------
 
 void Positive_GoalRush_2R_WS() {
-    chassis.set_position(-58 * TeamColorInt, -1, 10);
+    chassis.setPose(-58 * TeamColorInt, -1, 10);
     LadyBrownOdom.set_position(ArmLoadPos * 100);
 
     if (TeamColor) {
@@ -475,7 +475,7 @@ void Positive_GoalRush_2R_WS() {
 
     //----------------------------------------
 
-    turnToHeading(-135 * TeamColorInt, 1000);
+    chassis.turnToHeading(-135 * TeamColorInt, 1000);
     chassis.moveToPoint(-58 * TeamColorInt, -10, 1000);
     pros::delay(500);
     IntakeHook.brake();
@@ -702,6 +702,15 @@ void Negative_PC() {
     chassis.waitUntilDone();
 }
 
+//----------------------------------------------------------------------------------Skills----------------------------------------------------------------------------------
+
+void Skills() {
+    chassis.setPose(12 * TeamColorInt, -12, 180);
+    chassis.moveToPoint(24 * TeamColorInt, 24, 1000, {.forwards = false});
+
+    chassis.waitUntilDone();
+}
+
 //----------------------------------------------------------------------------------Auto Chaining----------------------------------------------------------------------------------
 
 void Negative_A1_4R_TB() {
@@ -720,6 +729,11 @@ void Negative_RingRush_5R_TB() {
 
 void Negative_RingRush_6R_TB() {
     Negative_RingRush_6R();
+    Negative_TB();
+}
+
+void SoloAWP_TB() {
+    SoloAWP();
     Negative_TB();
 }
 
