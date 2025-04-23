@@ -111,6 +111,7 @@ void initialize() {
             pros::lcd::print(1, "------------Y: %f", chassis.getPose().y); // y
             pros::lcd::print(2, "------------Theta: %f", chassis.getPose().theta); // heading
             
+        
             pros::lcd::print(5, "--------Arm Position: %f", ArmPos());
             // delay to save resources
             pros::delay(50);
@@ -141,8 +142,8 @@ bool EjectStay = false;
 //--------------------------------------------------------------------------------Doinker--------------------------------------------------------------------------------
 
 void DoinkerControl() {
-    int DoinkerLeftToggle = 1;
-    int DoinkerRightToggle = 1;
+    int DoinkerLeftToggle = -1;
+    int DoinkerRightToggle = -1;
     while (true) {
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
             if (DoinkerLeftToggle == 1) {
@@ -174,7 +175,7 @@ void ChassisControl() {
         int leftY = ParaRAID.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
         int rightX = ParaRAID.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
-        chassis.arcade(leftY*1.1, rightX);
+        chassis.arcade(leftY, rightX*1.1);
 
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
             chassis.setPose(0, 0, 0);
@@ -262,8 +263,10 @@ void FuncIntake() {
     int IntakeToggle = 1;
     int IntakeSpeed = 100; //100 for skills, 90 regular
     while (true) {
-        if (IntakeHook.get_actual_velocity() == 0 && IntakeToggle == -1) {
-            IntakeHook.move_velocity(IntakeSpeed * -2);
+        if ((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 1 && IntakeToggle == -1) {
+            IntakeHook.move_velocity(IntakeSpeed * -6);
+            pros::delay(50);
+            IntakeHook.move_velocity(IntakeSpeed * 6);
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
             while (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
                 IntakeFlex.move_velocity(IntakeSpeed * -2);
@@ -290,8 +293,8 @@ void FuncIntake() {
             IntakeToggle *= -1;
             pros::delay(500);
         } else if (IntakeToggle == -1) {
-            IntakeFlex.move_velocity(IntakeSpeed * 2);
-            IntakeHook.move_velocity(IntakeSpeed * 6);
+            // IntakeFlex.move_velocity(IntakeSpeed * 2);
+            // IntakeHook.move_velocity(IntakeSpeed * 6);
             pros::delay(10);
         }
         pros::delay(20);
@@ -314,6 +317,16 @@ void FuncIntakeLift() {
         }
 
         pros::delay(20);
+    }
+}
+
+void IntakeJamPrevAuto() {
+    while (true) {
+        if ((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 1) {
+            IntakeHook.move_velocity(-600);
+            pros::delay(50);
+            IntakeHook.move_velocity(600);
+        }
     }
 }
 
@@ -340,8 +353,8 @@ void FuncMogo() {
 
 //--------------------------------------------------------------------------------Eject & ColorSensor--------------------------------------------------------------------------------
 
-int redHueMax = 50;
-int redHueMin = 30;
+int redHueMax = 30;
+int redHueMin = 0;
 
 int blueHueMax = 150;
 int blueHueMin = 100;
@@ -350,21 +363,20 @@ int blueHueMin = 100;
 // blue = 100-150
 
 void DriverEject() {
+    VSensor.set_integration_time(10);
+ 
     while (true) {
         int opticalHue = VSensor.get_hue();
-        pros::lcd::print(3, "------------Optical Hue: %d", opticalHue);
+        pros::lcd::print(3, "------------int time: %f",  VSensor.get_integration_time());
         
-
         if (!TeamColor && (opticalHue > blueHueMin) && (opticalHue < blueHueMax) && (MogoToggle == -1)) {
-            pros::delay(300);
+            pros::delay(200);
+            IntakeHook.move_relative(-20, 200);
+            pros::delay(800);
             IntakeHook.brake();
-            pros::delay(600);
-            IntakeHook.move_velocity(600);
         } else if ((opticalHue > redHueMin) && (opticalHue < redHueMax) && (MogoToggle == -1)) {
-            pros::delay(300);
+            pros::delay(94.48);
             IntakeHook.brake();
-            pros::delay(600);
-            IntakeHook.move_velocity(600);
         }
         pros::delay(10);
     }
@@ -514,7 +526,9 @@ void Negative_A0() {
 }
 
 void Negative_RingRush_6R() {
-    chassis.setPose(30 * TeamColorInt, -12, 30);
+    pros::rtos::Task TaskIntakeJam(IntakeJamPrevAuto);
+
+    chassis.setPose(26.5 * TeamColorInt, -2.5, 18);
     pros::delay(20);
 
     IntakeFlex.move_velocity(200);
@@ -524,15 +538,15 @@ void Negative_RingRush_6R() {
         DoinkerLeft.set_value(4096);
     }
 
-    chassis.moveToPoint(44 * TeamColorInt, 35, 500, {.minSpeed = 127});
-    chassis.moveToPoint(44 * TeamColorInt, 35, 1000);
+    IntakeFlex.move_velocity(200);
+
+    chassis.moveToPoint(40.5 * TeamColorInt, 40.5, 500, {.minSpeed = 127});
+    chassis.moveToPoint(40.5 * TeamColorInt, 40.5, 1000);   
 
     //----------------------------------------
 
-    chassis.waitUntilDone();
-    pros::delay(500);
-    IntakeHook.move_velocity(300);
-    chassis.moveToPoint(24 * TeamColorInt, 24, 1000, {.forwards = false, .minSpeed = 30});
+    // chassis.turnToHeading(30 * TeamColorInt, 500);
+    chassis.moveToPoint(24 * TeamColorInt, 28, 1000, {.forwards = false, .minSpeed = 30});
 
     // while (chassis.getPose().x > 30 * TeamColorInt) {
     //     int opticalHue = VSensor.get_hue();
@@ -542,36 +556,54 @@ void Negative_RingRush_6R() {
     // }
 
     chassis.waitUntilDone();
-    pros::delay(500);
+    pros::delay(200);
     MobileGoal.set_value(4096);
     MogoToggle  = -1; // because we are holding the a Mogoal
 
-    chassis.turnToHeading(90 * TeamColorInt, 1000);
+    IntakeHook.move_velocity(600);
+
+    chassis.turnToHeading(65 * TeamColorInt, 400);
     chassis.waitUntilDone();
 
     DoinkerLeft.set_value(0);
     DoinkerRight.set_value(0);
 
-    chassis.moveToPoint(48 * TeamColorInt, 24, 1000);
+    chassis.moveToPoint(52 * TeamColorInt, 25, 1000, {.minSpeed = 40});
 
-    //---------------------------------------
+    //----------------------------------------
 
-    chassis.turnToPoint(58 * TeamColorInt, -10, 1000);
-    chassis.moveToPoint(58 * TeamColorInt, -10, 2000);
-
+    chassis.moveToPoint(56 * TeamColorInt, -6, 1750);
     chassis.turnToHeading(135 * TeamColorInt, 500);
-    chassis.moveToPoint(72 * TeamColorInt, -24, 800, {.minSpeed = 127});
-    chassis.moveToPoint(58 * TeamColorInt, -10, 500, {.forwards = false});
+
+    chassis.moveToPoint(72 * TeamColorInt, -24, 900, {.minSpeed = 127});
+    chassis.moveToPoint(53 * TeamColorInt, -3, 1000, {.forwards = false, .maxSpeed = 50});
+
+    chassis.moveToPoint(56 * TeamColorInt, -6, 800, {.minSpeed = 80});
 
     Lift.set_value(4095);
     chassis.moveToPoint(72 * TeamColorInt, -24, 1000, {.minSpeed = 127});
-    chassis.moveToPoint(58 * TeamColorInt, -10, 500, {.forwards = false});
+    chassis.moveToPoint(56 * TeamColorInt, -6, 1000, {.forwards = false, .maxSpeed = 50, .minSpeed = 50});
+
     chassis.waitUntilDone();
     Lift.set_value(0);
+    pros::delay(200);
 
     //---------------------------------------
 
+    chassis.turnToPoint(0, -18, 800);
     chassis.waitUntilDone();
+    ArmPIDtoPosition(ArmLoadPos, 500);
+    chassis.moveToPoint(0, -18, 1500);
+    
+    pros::delay(1000);
+    IntakeFlex.move_velocity(-200);
+
+    chassis.waitUntilDone();
+
+    IntakeHook.brake();
+    IntakeHook.move_relative(-20, 200);
+
+    // chassis.waitUntilDone();
 }
 
 void Negative_RingRush_5R() {
@@ -741,7 +773,7 @@ void SoloAWP_TB() {
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-    Negative_RingRush_5R();
+    Negative_RingRush_6R();
 
 }
 
@@ -753,10 +785,11 @@ void opcontrol() { //Driver
     pros::rtos::Task TaskArmControl(ArmControl);
     pros::rtos::Task TaskFuncIntake(FuncIntake);
     pros::rtos::Task TaskFuncMogo(FuncMogo);
-    //pros::rtos::Task TaskEject(DriverEject);
+    pros::rtos::Task TaskEject(DriverEject);
     pros::rtos::Task TaskDoiner(DoinkerControl);
     //pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
 
+    
     
     while (true) {
         
