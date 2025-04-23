@@ -381,10 +381,76 @@ bool isThereARing() {
 
 //----------------------------------------------------------------------------------Auto Routes----------------------------------------------------------------------------------
 
+
+//----------------------Solo AWP----------------------
+
+void SoloAWP() {
+    
+}
+
+
 //----------------------Positive----------------------
 
-void Positive_GoalRush_3R() {
+void Positive_GoalRush_2R_WS() {
+    chassis.set_position(-58 * TeamColorInt, -1, 10);
+    LadyBrownOdom.set_position(ArmLoadPos * 100);
+
+    if (TeamColor) {
+        DoinkerLeft.set_value(4096);
+    } else {
+        DoinkerRight.set_value(4096);
+    }
+
+    IntakeFlex.move_velocity(200);
+
+    chassis.moveToPoint(-52 * TeamColorInt, 29, 1000, {.minSpeed = 127});
+    chassis.waitUntilDone();
+
+    DoinkerLeft.set_value(0);
+    DoinkerRight.set_value(0);
+
+    chassis.turnToHeading(-60 * TeamColorInt, 1000);
+    chassis.moveToPoint(-24 * TeamColorInt, 24, 1000, {.forwards = false});
+    pros::delay(500);
     
+    if (TeamColor) {
+        DoinkerLeft.set_value(4096);
+    } else {
+        DoinkerRight.set_value(4096);
+    }
+
+    chassis.waitUntilDone();
+
+    DoinkerLeft.set_value(0);
+    DoinkerRight.set_value(0);
+
+    MobileGoal.set_value(4096);
+    pros::delay(300);
+    MogoToggle = -1; // because we are holding the a Mogoal
+    IntakeHook.move_velocity(600);
+
+    //----------------------------------------
+
+    turnToHeading(-135 * TeamColorInt, 1000);
+    chassis.moveToPoint(-58 * TeamColorInt, -10, 1000);
+    pros::delay(500);
+    IntakeHook.brake();
+    MobileGoal.set_value(0);
+    MogoToggle = 1; // because we droppped the Mogoal
+
+    chassis.moveToPoint(72 * TeamColorInt, -24, 800, {.minSpeed = 127});
+    chassis.moveToPoint(58 * TeamColorInt, -10, 500, {.forwards = false});
+
+    chassis.moveToPoint(-60 * TeamColorInt, 36, 1500, {.forwards = false});
+    chassis.waitUntilDone();
+    MobileGoal.set_value(4096);
+    MogoToggle = -1; // because we are holding the a Mogoal
+
+    IntakeHook.move_velocity(600);
+    chassis.turnToHeading(135 * TeamColorInt, 1000);
+    ArmPIDtoPosition(140, 0);
+
+    chassis.waitUntilDone();
 }
 
 void Positive_TB() {
@@ -393,9 +459,6 @@ void Positive_TB() {
 
     chassis.waitUntilDone();
 }
-
-
-
 
 //----------------------Negtative----------------------
 
@@ -571,6 +634,8 @@ void Negative_A1_4R() {
     chassis.waitUntilDone();
     
 }
+
+//--------------------------------------------------
 
 void Negative_TB() {
     chassis.turnToPoint(14 * TeamColorInt, 30, 1000);
