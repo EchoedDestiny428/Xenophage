@@ -84,7 +84,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 
 
 bool TeamColor = true; //true = blue, red = false 
-int TeamColorInt = 1;
+int TeamColorInt;
 bool skillz = false;
 
 double ArmPos() {
@@ -261,7 +261,7 @@ void ArmControl() {
 
 void FuncIntake() {
     int IntakeToggle = 1;
-    int IntakeSpeed = 100; //100 for skills, 90 regular
+    int IntakeSpeed = 90; //100 for skills, 90 regular
     while (true) {
         if ((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 1 && IntakeToggle == -1) {
             IntakeHook.move_velocity(IntakeSpeed * -6);
@@ -356,31 +356,11 @@ void FuncMogo() {
 int redHueMax = 30;
 int redHueMin = 0;
 
-int blueHueMax = 150;
-int blueHueMin = 100;
+int blueHueMax = 220;
+int blueHueMin = 180;
 
 // red = 30-50
 // blue = 100-150
-
-void DriverEject() {
-    VSensor.set_integration_time(10);
- 
-    while (true) {
-        int opticalHue = VSensor.get_hue();
-        pros::lcd::print(3, "------------int time: %f",  VSensor.get_integration_time());
-        
-        if (!TeamColor && (opticalHue > blueHueMin) && (opticalHue < blueHueMax) && (MogoToggle == -1)) {
-            pros::delay(200);
-            IntakeHook.move_relative(-20, 200);
-            pros::delay(800);
-            IntakeHook.brake();
-        } else if ((opticalHue > redHueMin) && (opticalHue < redHueMax) && (MogoToggle == -1)) {
-            pros::delay(94.48);
-            IntakeHook.brake();
-        }
-        pros::delay(10);
-    }
-}
 
 bool isThereARing() {
     int opticalHue = VSensor.get_hue();
@@ -390,6 +370,30 @@ bool isThereARing() {
         return false;
     }
 }
+
+void DriverEject() {
+    VSensor.set_integration_time(10);
+
+    while (true) {
+        int opticalHue = VSensor.get_hue();
+        pros::lcd::print(3, "------------VSensor Hue: %f",  VSensor.get_hue());
+        
+        if (!TeamColor && (opticalHue > blueHueMin) && (opticalHue < blueHueMax) && (MogoToggle == -1)) {
+            while (isThereARing()) {
+                pros::delay(1);
+            }
+            IntakeHook.brake();
+        } else if ((opticalHue > redHueMin) && (opticalHue < redHueMax) && (MogoToggle == -1)) {
+            while (isThereARing()) {
+                pros::delay(1);
+            }
+            IntakeHook.brake();
+        }
+        pros::delay(2);
+    }
+}
+
+
 
 //----------------------------------------------------------------------------------Auto Routes----------------------------------------------------------------------------------
 
