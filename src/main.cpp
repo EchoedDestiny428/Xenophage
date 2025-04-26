@@ -96,6 +96,7 @@ void initialize() {
     pros::lcd::initialize();
     chassis.calibrate();
     LadyBrownOdom.reset_position();
+    Arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
     if (TeamColor) {
         TeamColorInt = 1;
@@ -189,6 +190,9 @@ void ChassisControl() {
 
 //--------------------------------------------------------------------------------Arm--------------------------------------------------------------------------------
 
+double ArmLoadPos = 27.50;
+double ArmTipPos = 180.00;
+double ScoreAlliancePos = 186.00;
 
 void ArmPIDtoPosition(double target, double timeout) {
     double ArmKp = 4.00; // Proportional Modifier
@@ -197,6 +201,7 @@ void ArmPIDtoPosition(double target, double timeout) {
     double prevError = 0;
     double derivative = 0;
     double repeated = 0;
+    
 
     while ((ArmPos() > (target + 0.5)) || (ArmPos() < (target - 0.5))) {
         error = target - ArmPos();
@@ -206,12 +211,11 @@ void ArmPIDtoPosition(double target, double timeout) {
 
         Arm.move_velocity((ArmKp * error) + (ArmKd * derivative)); // PID Control
 
-
         prevError = error;
         
         pros::delay(20);
 
-        if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) || ((repeated > (timeout/20)) && (timeout != 0))) {
+        if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) || ((repeated >= (timeout/25)) && (timeout != 0))) {
             goto exit;
         }
 
@@ -223,9 +227,38 @@ void ArmPIDtoPosition(double target, double timeout) {
     repeated = 0;
 }
 
-double ArmLoadPos = 27.50;
-double ArmTipPos = 180.00;
-double ScoreAlliancePos = 186.00;
+void loadPos() {
+    double ArmKp = 4.00; // Proportional Modifier
+    double ArmKd = 3.20; // Derivative Modifier
+    double error;
+    double prevError = 0;
+    double derivative = 0;
+    double repeated = 0;
+    
+
+    while ((ArmPos() > (ArmLoadPos + 0.5)) || (ArmPos() < (ArmLoadPos - 0.5))) {
+        error = ArmLoadPos - ArmPos();
+        derivative = error - prevError;
+
+        pros::lcd::print(6, "-----------Arm Error: %f", error);
+
+        Arm.move_velocity((ArmKp * error) + (ArmKd * derivative)); // PID Control
+
+        prevError = error;
+        
+        pros::delay(20);
+
+        if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) || ((repeated >= (600/20)))) {
+            goto exit;
+        }
+
+        repeated += 1;
+
+    }
+    exit:
+    Arm.brake();
+    repeated = 0;
+}
 
 void ArmControl() {
     Arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
@@ -323,7 +356,7 @@ void FuncIntakeLift() {
 void IntakeJamPrevAuto() {
     while (true) {
         if ((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 1) {
-            IntakeHook.move_velocity(-600);
+            IntakeHook.move_velocity(-400);
             pros::delay(50);
             IntakeHook.move_velocity(600);
         }
@@ -572,42 +605,58 @@ void Negative_RingRush_6R() {
     DoinkerLeft.set_value(0);
     DoinkerRight.set_value(0);
 
-    chassis.moveToPoint(52 * TeamColorInt, 25, 1000, {.minSpeed = 40});
+    chassis.moveToPoint(44 * TeamColorInt, 25, 1000, {.minSpeed = 60});
 
     //----------------------------------------
 
-    chassis.moveToPoint(56 * TeamColorInt, -6, 1750);
+    chassis.moveToPoint(56 * TeamColorInt, -3, 1750);
     chassis.turnToHeading(135 * TeamColorInt, 500);
 
     chassis.moveToPoint(72 * TeamColorInt, -24, 900, {.minSpeed = 127});
     chassis.moveToPoint(53 * TeamColorInt, -3, 1000, {.forwards = false, .maxSpeed = 50});
 
-    chassis.moveToPoint(56 * TeamColorInt, -6, 800, {.minSpeed = 80});
+    // chassis.moveToPoint(56 * TeamColorInt, -6, 800, {.minSpeed = 80});
 
-    Lift.set_value(4095);
-    chassis.moveToPoint(72 * TeamColorInt, -24, 1000, {.minSpeed = 127});
-    chassis.moveToPoint(56 * TeamColorInt, -6, 1000, {.forwards = false, .maxSpeed = 50, .minSpeed = 50});
+    // Lift.set_value(4095);
+    // chassis.moveToPoint(72 * TeamColorInt, -24, 1000, {.minSpeed = 127});
+    // chassis.moveToPoint(56 * TeamColorInt, -6, 1000, {.forwards = false, .maxSpeed = 50, .minSpeed = 50});
 
-    chassis.waitUntilDone();
-    Lift.set_value(0);
-    pros::delay(200);
+    // chassis.waitUntilDone();
+    // Lift.set_value(0);
+    // pros::delay(200);
 
     //---------------------------------------
 
-    chassis.turnToPoint(0, -18, 800);
+    chassis.turnToPoint(2.5, -10.2, 800);
+    chassis.moveToPoint(12, -10.2, 500, {.minSpeed = 127});
     chassis.waitUntilDone();
     ArmPIDtoPosition(ArmLoadPos, 500);
-    chassis.moveToPoint(0, -18, 1500);
+
+    chassis.moveToPoint(2.5, -10.2, 1500, {.maxSpeed = 100}, false);
     
-    pros::delay(1000);
-    IntakeFlex.move_velocity(-200);
+    
+    // pros::rtos::Task LoadPos(loadPos);
+    // chassis.waitUntilDone();
+    // LoadPos.remove();
 
     chassis.waitUntilDone();
+    TaskIntakeJam.remove();
+    IntakeFlex.brake();
+
+    pros::delay(500);
+    IntakeHook.brake();
+    IntakeHook.move_velocity(-400);
+    pros::delay(200);
 
     IntakeHook.brake();
-    IntakeHook.move_relative(-20, 200);
 
-    // chassis.waitUntilDone();
+    chassis.turnToHeading(175, 800);
+    chassis.waitUntilDone();
+
+    ArmPIDtoPosition(ScoreAlliancePos, 800);
+    chassis.setPose(0, -4, 180);
+    chassis.moveToPoint(0, 12, 1000, {.forwards = false});
+    chassis.turnToHeading(10, 1000);
 }
 
 void Negative_RingRush_5R() {
@@ -779,6 +828,7 @@ void SoloAWP_TB() {
 void autonomous() {
     Negative_RingRush_6R();
 
+
 }
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
@@ -789,11 +839,10 @@ void opcontrol() { //Driver
     pros::rtos::Task TaskArmControl(ArmControl);
     pros::rtos::Task TaskFuncIntake(FuncIntake);
     pros::rtos::Task TaskFuncMogo(FuncMogo);
-    pros::rtos::Task TaskEject(DriverEject);
+    //pros::rtos::Task TaskEject(DriverEject);
     pros::rtos::Task TaskDoiner(DoinkerControl);
     //pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
 
-    
     
     while (true) {
         
