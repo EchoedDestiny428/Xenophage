@@ -83,7 +83,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 //----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
 
-bool TeamColor = true; //true = blue, red = false 
+bool TeamColor = false; //true = blue, red = false 
 int TeamColorInt;
 bool skillz = false;
 
@@ -230,34 +230,27 @@ void FuncMogo() {
 
 //--------------------------------------------------------------------------------Eject & ColorSensor--------------------------------------------------------------------------------
 
-int EjectHeight = 22.0;
-bool ejecting = false;
+
 
 void DriverEject() {
     VSensor.set_led_pwm(100);
+    //VSensor.set_integration_time(5);
 
     while (true) {
         int opticalHue = VSensor.get_hue();
-        //pros::lcd::print(3, "------------VSensor Hue: %f",  VSensor.get_hue());
+        pros::lcd::print(3, "------------VSensor Hue: %f",  VSensor.get_hue());
         
         if (!TeamColor && (opticalHue > blueHueMin) && (opticalHue < blueHueMax) && (MogoToggle == -1)) {
-            ejecting = true;
+            pros::delay(30);
+            IntakeHook.brake();
+            pros::delay(100);
+            IntakeHook.move_velocity(600);
+        } else if (TeamColor && (opticalHue > redHueMin) && (opticalHue < redHueMax) && (MogoToggle == -1)) {
+            pros::delay(30);
+            IntakeHook.brake();
+            pros::delay(100);
+            IntakeHook.move_velocity(600);
 
-            Arm.move_absolute(EjectHeight * 10, 200);
-            pros::delay(1000);
-            Arm.move_absolute(3 * 10, 200);
-
-            pros::delay(500);
-            ejecting = false;
-        } else if ((opticalHue > redHueMin) && (opticalHue < redHueMax) && (MogoToggle == -1)) {
-            ejecting = true;
-
-            Arm.move_absolute(EjectHeight * 10, 200);
-            pros::delay(1000);
-            Arm.move_absolute(3 * 10, 200);
-
-            pros::delay(5000);
-            ejecting = false;
         }
         pros::delay(2);
     }
@@ -324,7 +317,7 @@ void ArmControl() {
             if (ArmPos() < 0) {
                 LadyBrownOdom.reset_position();
             } 
-        } else if (!ejecting) {
+        } else {
             Arm.brake();
         }
         pros::delay(10);
@@ -339,7 +332,7 @@ void ArmControl() {
 
 void FuncIntake() {
     int IntakeToggle = 1;
-    int IntakeSpeed = 90; //100 for skills, 90 regular
+    int IntakeSpeed = 95; //100 for skills, 90 regular
     while (true) {
         if ((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 1 && IntakeToggle == -1) {
             IntakeHook.move_velocity(IntakeSpeed * -6);
@@ -365,7 +358,7 @@ void FuncIntake() {
             } else {
                 IntakeFlex.brake();
                 IntakeHook.brake();
-                IntakeHook.move_relative(-100, 600);
+                IntakeHook.move_relative(-30, 600);
                 pros::delay(50);
             }
             IntakeToggle *= -1;
@@ -493,8 +486,10 @@ void Positive_GoalRush_2R_WS() {
     DoinkerRight.set_value(0);
     DoinkerLeft.set_value(0);
 
-    chassis.moveToPoint(-42 * TeamColorInt, 25, 700, {.forwards = false, .minSpeed = 127});
-    pros::delay(300);
+    chassis.moveToPoint(-42 * TeamColorInt, 18, 300, {.forwards = false, .minSpeed = 127});
+    chassis.moveToPoint(-42 * TeamColorInt, 18, 300, {.forwards = false});
+
+    pros::delay(400);
     
     if (TeamColor) {
         DoinkerRight.set_value(4096);
@@ -504,61 +499,83 @@ void Positive_GoalRush_2R_WS() {
 
     //----------------------------------------
 
-    chassis.turnToHeading(-200 * TeamColorInt, 1000);
+    pros::delay(200);
+    chassis.turnToHeading(-190 * TeamColorInt, 800);
     chassis.waitUntilDone();
     DoinkerRight.set_value(0);
     DoinkerLeft.set_value(0);
-    chassis.moveToPoint(-40 * TeamColorInt, 42, 100, {.forwards = false});
+    chassis.moveToPoint(-44.5 * TeamColorInt, 37, 800, {.forwards = false});
     chassis.waitUntilDone();
     MobileGoal.set_value(4096);
     IntakeHook.move_velocity(600);
 
     //----------------------------------------
 
-    pros::delay(700);
+    pros::delay(300);
+    chassis.moveToPoint(-44 * TeamColorInt, 26, 800);
+    pros::delay(500);
     MobileGoal.set_value(0);
-    chassis.moveToPoint(-44 * TeamColorInt, 30, 800);
-    chassis.turnToHeading(-90 * TeamColorInt, 800);
-    chassis.moveToPoint(-26 * TeamColorInt, 30, 1200, {.forwards = false});
+    chassis.turnToHeading(-90 * TeamColorInt, 800);    
+
+    chassis.moveToPoint(-24 * TeamColorInt, 26, 800, {.forwards = false});
     chassis.waitUntilDone();
     MobileGoal.set_value(4096);
 
     //----------------------------------------
 
-    chassis.turnToHeading(-135 * TeamColorInt, 1000);
+    chassis.turnToHeading(-135 * TeamColorInt, 800);
     chassis.waitUntilDone();
     chassis.setPose(-24 * TeamColorInt, 24, -135 * TeamColorInt);
-    chassis.moveToPoint(-60 * TeamColorInt, -10, 1000, {.minSpeed = 80});
-    chassis.moveToPoint(-72 * TeamColorInt, -24, 1000, {.minSpeed = 127});
-    Arm.move_absolute(ScoreAlliancePos * 10, 200);
+    chassis.moveToPoint(-52 * TeamColorInt, -10, 800, {.minSpeed = 80});
+    chassis.moveToPoint(-72 * TeamColorInt, -24, 800, {.minSpeed = 127});
 
     //----------------------------------------
 
-    // chassis.moveToPoint(-52 * TeamColorInt, -6, 1000, {.forwards = false});
-
+    // chassis.moveToPoint(-52 * TeamColorInt, -6, 800, {.forwards = false});
     // chassis.waitUntilDone();
     // Lift.set_value(4096);
-    // chassis.moveToPoint(-72 * TeamColorInt, -24, 1000, {.minSpeed = 127});
-    // chassis.moveToPoint(-52 * TeamColorInt, -6, 1000, {.forwards = false});
+    // chassis.moveToPoint(-72 * TeamColorInt, -24, 800, {.minSpeed = 127});
+    // chassis.moveToPoint(-52 * TeamColorInt, -6, 800, {.forwards = false});
 
     // chassis.waitUntilDone();
     // Lift.set_value(0);
 
     // MobileGoal.set_value(0);
 
-    chassis.moveToPoint(-42 * TeamColorInt, -10, 1000, {.forwards = false});
-    chassis.turnToHeading(-110 * TeamColorInt, 1000);
-    chassis.waitUntilDone();
-    
+    chassis.moveToPoint(-46 * TeamColorInt, -8, 1200, {.forwards = false, .minSpeed = 100});
     if (TeamColor) {
         DoinkerLeft.set_value(4096);
     } else {
         DoinkerRight.set_value(4096);
     }
+    chassis.moveToPoint(-48 * TeamColorInt, -10, 800, {.minSpeed = 80});
+    chassis.turnToHeading(45 * TeamColorInt, 800, {.direction = AngularDirection::CCW_COUNTERCLOCKWISE});
+
+    //----------------------------------------
+
+    IntakeHook.brake();
+    IntakeFlex.brake();
+
+    chassis.moveToPoint(-44 * TeamColorInt, 4, 800);
+
+    pros::delay(400);
+    MobileGoal.set_value(0);
+    DoinkerLeft.set_value(0);
+    DoinkerRight.set_value(0);
+
+    chassis.turnToHeading(-45 * TeamColorInt, 800);
+    
+    chassis.moveToPose(-55 * TeamColorInt, 25, -30 * TeamColorInt, 800, {.minSpeed = 100});
+    chassis.moveToPose(-62 * TeamColorInt, 32, 0, 1000);
+
+    pros::delay(500);
+    Arm.move_absolute(1700, 200);
+
+    chassis.waitUntilDone();
 }
 
 void Positive_TB() {
-    chassis.turnToPoint(-14 * TeamColorInt, 30, 1000);
+    chassis.turnToPoint(-14 * TeamColorInt, 30, 800);
     chassis.moveToPoint(-14 * TeamColorInt, 30, 2000, {.minSpeed = 40});
 
     chassis.waitUntilDone();
@@ -623,7 +640,7 @@ void Negative_RingRush_6R() {
     chassis.turnToHeading(135 * TeamColorInt, 500);
 
     chassis.moveToPoint(72 * TeamColorInt, -24, 900, {.minSpeed = 127});
-    chassis.moveToPoint(53 * TeamColorInt, -3, 1000, {.forwards = false, .maxSpeed = 50});
+    chassis.moveToPoint(53 * TeamColorInt, -3, 800, {.forwards = false, .maxSpeed = 50});
 
     // chassis.moveToPoint(56 * TeamColorInt, -6, 800, {.minSpeed = 80});
 
