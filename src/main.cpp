@@ -83,7 +83,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 //----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
 
-bool TeamColor = false; //true = blue, red = false 
+bool TeamColor = true; //true = blue, red = false 
 int TeamColorInt;
 bool skillz = false;
 
@@ -96,7 +96,7 @@ void initialize() {
     pros::lcd::initialize();
     chassis.calibrate();
     LadyBrownOdom.reset_position();
-    Arm.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    Arm.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 
     if (TeamColor) {
         TeamColorInt = 1;
@@ -137,6 +137,25 @@ void competition_initialize() { //Auto Selector
 
 bool DontEject = false;
 bool EjectStay = false;
+
+int redHueMax = 30;
+int redHueMin = 0;
+
+int blueHueMax = 220;
+int blueHueMin = 180;
+
+// red = 30-50
+// blue = 100-150
+
+bool isThereARing() {
+    int opticalHue = VSensor.get_hue();
+    if ((opticalHue > blueHueMin) && (opticalHue < blueHueMax) || (opticalHue > redHueMin) && (opticalHue < redHueMax)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 
 
 
@@ -188,6 +207,62 @@ void ChassisControl() {
     }
 }
 
+//--------------------------------------------------------------------------------Mogoal--------------------------------------------------------------------------------
+
+int MogoToggle = 1;
+void FuncMogo() {
+    while (true) {
+        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+            if (MogoToggle == 1) {
+                MobileGoal.set_value(4095);
+                ParaRAID.set_text(0, 0, "On ");
+            } else {
+                MobileGoal.set_value(0);
+                ParaRAID.set_text(0, 0, "Off");
+            }
+
+            MogoToggle *= -1;
+            pros::delay(500);
+        }
+        pros::delay(5);
+    }
+}
+
+//--------------------------------------------------------------------------------Eject & ColorSensor--------------------------------------------------------------------------------
+
+int EjectHeight = 22.0;
+bool ejecting = false;
+
+void DriverEject() {
+    VSensor.set_led_pwm(100);
+
+    while (true) {
+        int opticalHue = VSensor.get_hue();
+        //pros::lcd::print(3, "------------VSensor Hue: %f",  VSensor.get_hue());
+        
+        if (!TeamColor && (opticalHue > blueHueMin) && (opticalHue < blueHueMax) && (MogoToggle == -1)) {
+            ejecting = true;
+
+            Arm.move_absolute(EjectHeight * 10, 200);
+            pros::delay(1000);
+            Arm.move_absolute(3 * 10, 200);
+
+            pros::delay(500);
+            ejecting = false;
+        } else if ((opticalHue > redHueMin) && (opticalHue < redHueMax) && (MogoToggle == -1)) {
+            ejecting = true;
+
+            Arm.move_absolute(EjectHeight * 10, 200);
+            pros::delay(1000);
+            Arm.move_absolute(3 * 10, 200);
+
+            pros::delay(5000);
+            ejecting = false;
+        }
+        pros::delay(2);
+    }
+}
+
 //--------------------------------------------------------------------------------Arm--------------------------------------------------------------------------------
 
 double ArmLoadPos = 27.50;
@@ -207,7 +282,6 @@ void ArmPIDtoPosition(double target, double timeout) {
         error = target - ArmPos();
         derivative = error - prevError;
 
-        pros::lcd::print(6, "-----------Arm Error: %f", error);
 
         Arm.move_velocity((ArmKp * error) + (ArmKd * derivative)); // PID Control
 
@@ -250,12 +324,14 @@ void ArmControl() {
             if (ArmPos() < 0) {
                 LadyBrownOdom.reset_position();
             } 
-        } else {
+        } else if (!ejecting) {
             Arm.brake();
         }
         pros::delay(10);
     }
 }
+
+
 
 
 //--------------------------------------------------------------------------------Intake--------------------------------------------------------------------------------
@@ -343,68 +419,6 @@ void IntakeJamPrevAuto() {
     exit:
 }
 
-//--------------------------------------------------------------------------------Mogoal--------------------------------------------------------------------------------
-
-int MogoToggle = 1;
-void FuncMogo() {
-    while (true) {
-        if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
-            if (MogoToggle == 1) {
-                MobileGoal.set_value(4095);
-                ParaRAID.set_text(0, 0, "On ");
-            } else {
-                MobileGoal.set_value(0);
-                ParaRAID.set_text(0, 0, "Off");
-            }
-
-            MogoToggle *= -1;
-            pros::delay(500);
-        }
-        pros::delay(5);
-    }
-}
-
-//--------------------------------------------------------------------------------Eject & ColorSensor--------------------------------------------------------------------------------
-
-int redHueMax = 30;
-int redHueMin = 0;
-
-int blueHueMax = 220;
-int blueHueMin = 180;
-
-// red = 30-50
-// blue = 100-150
-
-bool isThereARing() {
-    int opticalHue = VSensor.get_hue();
-    if ((opticalHue > blueHueMin) && (opticalHue < blueHueMax) || (opticalHue > redHueMin) && (opticalHue < redHueMax)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-void DriverEject() {
-    VSensor.set_integration_time(10);
-
-    while (true) {
-        int opticalHue = VSensor.get_hue();
-        pros::lcd::print(3, "------------VSensor Hue: %f",  VSensor.get_hue());
-        
-        if (!TeamColor && (opticalHue > blueHueMin) && (opticalHue < blueHueMax) && (MogoToggle == -1)) {
-            while (isThereARing()) {
-                pros::delay(1);
-            }
-            IntakeHook.brake();
-        } else if ((opticalHue > redHueMin) && (opticalHue < redHueMax) && (MogoToggle == -1)) {
-            while (isThereARing()) {
-                pros::delay(1);
-            }
-            IntakeHook.brake();
-        }
-        pros::delay(2);
-    }
-}
 
 
 
@@ -824,13 +838,12 @@ void opcontrol() { //Driver
     pros::rtos::Task TaskArmControl(ArmControl);
     pros::rtos::Task TaskFuncIntake(FuncIntake);
     pros::rtos::Task TaskFuncMogo(FuncMogo);
-    //pros::rtos::Task TaskEject(DriverEject);
+    pros::rtos::Task TaskEject(DriverEject);
     pros::rtos::Task TaskDoiner(DoinkerControl);
     //pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
 
     
     while (true) {
-        
 
 		pros::delay(20);                               // Run for 20 ms then update
     }
