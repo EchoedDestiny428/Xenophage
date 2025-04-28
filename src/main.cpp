@@ -4,14 +4,13 @@
 //----------------------------------------------------------------------------------Device Setup----------------------------------------------------------------------------------
 //--START Device Setup--
 
-pros::MotorGroup Left ({-20, 13, -7}, pros::MotorGears::blue);
-pros::MotorGroup Right ({14, 18, -17}, pros::MotorGears::blue);
-pros::Motor Arm (8, pros::MotorGears::green);
+pros::MotorGroup Left ({11, -16, -7}, pros::MotorGears::blue);
+pros::MotorGroup Right ({12, 15, -14}, pros::MotorGears::blue);
+pros::Motor Arm (5, pros::MotorGears::green);
 pros::Motor IntakeFlex (-2, pros::MotorGears::green);
 pros::Motor IntakeHook (-1, pros::MotorGears::blue);
 
 pros::Controller ParaRAID(pros::E_CONTROLLER_MASTER);
-
 
 pros::adi::DigitalOut Lift('B');
 pros::adi::DigitalOut Eject('H'); //doesn't exist
@@ -20,10 +19,10 @@ pros::adi::DigitalOut DoinkerLeft('A');
 pros::adi::DigitalOut DoinkerRight('D');
 
 pros::Rotation LadyBrownOdom(-3);
-pros::Optical VSensor(4);
-pros::Imu Inertial(10); 
-pros::Rotation HorizontalEnc(9);
-pros::Rotation VerticalEnc(-12);
+pros::Optical VSensor(10);
+pros::Imu Inertial(8); 
+pros::Rotation HorizontalEnc(6);
+pros::Rotation VerticalEnc(-13);
 
 lemlib::TrackingWheel Horizontal(&HorizontalEnc, lemlib::Omniwheel::NEW_2, 0.0); //change
 lemlib::TrackingWheel Vertical(&VerticalEnc, lemlib::Omniwheel::NEW_2, -0.1);
