@@ -332,10 +332,17 @@ void FuncIntake() {
     int IntakeToggle = 1;
     int IntakeSpeed = 95; //100 for skills, 90 regular
     while (true) {
-        if ((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 1 && IntakeToggle == -1) {
-            IntakeHook.move_velocity(IntakeSpeed * -6);
-            pros::delay(50);
-            IntakeHook.move_velocity(IntakeSpeed * 6);
+        if (((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 1 && IntakeToggle == -1)) {
+            if (((LadyBrownOdom.get_position() * 100) > ArmLoadPos-1) && ((LadyBrownOdom.get_position() * 100) < ArmLoadPos+1)) {
+                IntakeHook.move_velocity(IntakeSpeed * -6);
+                pros::delay(50);
+                IntakeHook.brake();
+                IntakeToggle = 1;
+            } else {
+                IntakeHook.move_velocity(IntakeSpeed * -6);
+                pros::delay(50);
+                IntakeHook.move_velocity(IntakeSpeed * 6);
+            }
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
             while (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
                 IntakeFlex.move_velocity(IntakeSpeed * -2);
