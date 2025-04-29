@@ -81,7 +81,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 //----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
 
-bool TeamColor = true; //true = blue, red = false 
+bool TeamColor = false; //true = blue, red = false 
 int TeamColorInt;
 bool skillz = false;
 
@@ -479,6 +479,7 @@ void SoloAWP() {
 //----------------------Positive----------------------
 
 void Positive_GoalRush_2R_WS() {
+    pros::rtos::Task PrevJam(IntakeJamPrevAuto);
     chassis.setPose(-33.7 * TeamColorInt, -6, -21 * TeamColorInt);
     if (TeamColor) {
         DoinkerRight.set_value(4096);
@@ -487,8 +488,8 @@ void Positive_GoalRush_2R_WS() {
     }
     IntakeFlex.move_velocity(200);
 
-    chassis.moveToPoint(-47.5 * TeamColorInt, 30, 700, {.minSpeed = 127});
-    chassis.moveToPoint(-47.5 * TeamColorInt, 30, 1000);
+    chassis.moveToPoint(-47.5 * TeamColorInt, 29.5, 700, {.minSpeed = 127});
+    chassis.moveToPoint(-47.5 * TeamColorInt, 29.5, 1000);
     pros::delay(200);
     DoinkerRight.set_value(0);
     DoinkerLeft.set_value(0);
@@ -549,34 +550,35 @@ void Positive_GoalRush_2R_WS() {
 
     // MobileGoal.set_value(0);
 
-    chassis.moveToPoint(-46 * TeamColorInt, -8, 1200, {.forwards = false, .minSpeed = 100});
-    chassis.waitUntilDone();
+    chassis.moveToPoint(-46.0 * TeamColorInt, -8, 800, {.forwards = false, .minSpeed = 100});
+    pros::delay(500);
     if (TeamColor) {
         DoinkerLeft.set_value(4096);
     } else {
         DoinkerRight.set_value(4096);
     }
-    chassis.moveToPoint(-48 * TeamColorInt, -10, 800, {.minSpeed = 80});
-    chassis.turnToHeading(45 * TeamColorInt, 800, {.direction = AngularDirection::CCW_COUNTERCLOCKWISE});
+    chassis.turnToPoint(-48 * TeamColorInt, -10, 400);
+    chassis.moveToPoint(-50 * TeamColorInt, -10, 800, {.minSpeed = 80});
+    chassis.turnToHeading(0, 1000, {.direction = AngularDirection::CCW_COUNTERCLOCKWISE});
+    chassis.waitUntilDone();
 
     //----------------------------------------
 
-    IntakeHook.brake();
-    IntakeFlex.brake();
-
-    chassis.moveToPoint(-44 * TeamColorInt, 4, 800);
-
-    pros::delay(400);
-    MobileGoal.set_value(0);
     DoinkerLeft.set_value(0);
     DoinkerRight.set_value(0);
 
-    chassis.turnToHeading(-45 * TeamColorInt, 800);
-    
-    chassis.moveToPose(-61 * TeamColorInt, 32, 0, 1500, {.minSpeed = 80});
-    chassis.moveToPoint(-61 * TeamColorInt, 32, 500, {.maxSpeed = 80});
+    chassis.moveToPose(-68.5 * TeamColorInt, 36, -5 * TeamColorInt, 2000);
+    pros::delay(500);
 
-    Arm.move_absolute(1700, 200);
+    IntakeHook.brake();
+    IntakeFlex.move_velocity(-200);
+
+    MobileGoal.set_value(0);    
+
+
+    chassis.waitUntilDone();
+    Arm.move_absolute(1400, 200);
+
 
     chassis.waitUntilDone();
 }
@@ -851,23 +853,24 @@ void SoloAWP_TB() {
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-    //Positive_GoalRush_2R_WS();
+    Positive_GoalRush_2R_WS();
 
-    SoloAWP();
+    //SoloAWP();
 }
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
 
 
 void opcontrol() { //Driver
-    pros::rtos::Task TaskChassisControl(ChassisControl);
-    pros::rtos::Task TaskArmControl(ArmControl);
-    pros::rtos::Task TaskFuncIntake(FuncIntake);
-    pros::rtos::Task TaskFuncMogo(FuncMogo);
-    pros::rtos::Task TaskEject(DriverEject);
-    pros::rtos::Task TaskDoiner(DoinkerControl);
+    // pros::rtos::Task TaskChassisControl(ChassisControl);
+    // pros::rtos::Task TaskArmControl(ArmControl);
+    // pros::rtos::Task TaskFuncIntake(FuncIntake);
+    // pros::rtos::Task TaskFuncMogo(FuncMogo);
+    // pros::rtos::Task TaskEject(DriverEject);
+    // pros::rtos::Task TaskDoiner(DoinkerControl);
     //pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
 
+    autonomous();
     
     while (true) {
 
