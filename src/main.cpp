@@ -13,10 +13,9 @@ pros::Motor IntakeHook (-1, pros::MotorGears::blue);
 pros::Controller ParaRAID(pros::E_CONTROLLER_MASTER);
 
 pros::adi::DigitalOut Lift('B');
-pros::adi::DigitalOut Eject('H'); //doesn't exist
-pros::adi::DigitalOut MobileGoal('E');
-pros::adi::DigitalOut DoinkerLeft('A');
-pros::adi::DigitalOut DoinkerRight('D');
+pros::adi::DigitalOut MobileGoal('C');
+pros::adi::DigitalOut DoinkerLeft('E');
+pros::adi::DigitalOut DoinkerRight('A');
 
 pros::Rotation LadyBrownOdom(-3);
 pros::Optical VSensor(10);
@@ -32,7 +31,7 @@ lemlib::Drivetrain drivetrain(&Left, &Right, 12.8, lemlib::Omniwheel::NEW_325, 4
 
 // Forward PID
 lemlib::ControllerSettings linearController(6,  // proportional gain (kP)
-                                            0, // integral gain (kI)
+                                            0, // integral gain (kI)    
                                             12, // derivative gain (kD)
                                             1, // anti windup
                                             1, // small error range, in inches
@@ -82,7 +81,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 //----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
 
-bool TeamColor = false; //true = blue, red = false 
+bool TeamColor = true; //true = blue, red = false 
 int TeamColorInt;
 bool skillz = false;
 
@@ -422,46 +421,48 @@ void IntakeJamPrevAuto() {
 void SoloAWP() {
     chassis.setPose(12 * TeamColorInt, -12, -120);
     LadyBrownOdom.set_position(ArmLoadPos * 100);
+    Arm.set_zero_position(ArmLoadPos * 10);
     pros::delay(20);
 
-    ArmPIDtoPosition(ScoreAlliancePos, 500);
-    chassis.moveToPoint(24 * TeamColorInt, 24, 1600, {.forwards = false, .minSpeed = 50});
-    pros::delay(500);
-    ArmPIDtoPosition(3.00, 650);
-
+    ArmPIDtoPosition(ScoreAlliancePos, 800);
+    chassis.moveToPoint(24 * TeamColorInt, 25, 1600, {.forwards = false, .minSpeed = 50});
+    
+    Arm.move_absolute(10, 200);
     chassis.waitUntilDone();
 
     //-----------------------------------------------
 
     MobileGoal.set_value(4096);
     MogoToggle = -1; // because we are holding the a Mogoal
+    pros::delay(200);
 
     //-----------------------------------------------
 
     IntakeFlex.move_velocity(200);
     IntakeHook.move_velocity(600);
 
-    chassis.moveToPoint(24 * TeamColorInt, 24, 1000);
+    chassis.moveToPoint(48 * TeamColorInt, 24, 1000);
     chassis.turnToPoint(0, 0, 1000);
     chassis.waitUntilDone();
     Lift.set_value(4096);
-    chassis.moveToPoint(0, 0, 1000);
+    chassis.moveToPoint(0, 0, 1000, {.minSpeed = 100});
     chassis.waitUntilDone();
     pros::delay(500);
 
     MobileGoal.set_value(0);
     MogoToggle = 1; // because we droppped the Mogoal
+    Lift.set_value(0);
 
     //-----------------------------------------------
 
-    chassis.turnToHeading(135 * TeamColorInt, 1000);
-    chassis.moveToPoint(-24 * TeamColorInt, 24, 1000, {.forwards = false});
-    chassis.waitUntilDone();
-    MobileGoal.set_value(4096);
-    MogoToggle = -1; // because we are holding the a Mogoal
+    // chassis.turnToHeading(135 * TeamColorInt, 1000);
+    // chassis.moveToPoint(-24 * TeamColorInt, 24, 1000, {.forwards = false});
+    // chassis.waitUntilDone();
+    // MobileGoal.set_value(4096);
+    // MogoToggle = -1; // because we are holding the a Mogoal
 
-    chassis.turnToHeading(-90 * TeamColorInt, 1000);
-    chassis.moveToPoint(-24 * TeamColorInt, 24, 1000);
+    // chassis.turnToHeading(-90 * TeamColorInt, 1000);
+    // chassis.moveToPoint(-24 * TeamColorInt, 24, 1000);
 
 
     chassis.waitUntilDone();
@@ -542,6 +543,7 @@ void Positive_GoalRush_2R_WS() {
     // MobileGoal.set_value(0);
 
     chassis.moveToPoint(-46 * TeamColorInt, -8, 1200, {.forwards = false, .minSpeed = 100});
+    chassis.waitUntilDone();
     if (TeamColor) {
         DoinkerLeft.set_value(4096);
     } else {
@@ -564,10 +566,9 @@ void Positive_GoalRush_2R_WS() {
 
     chassis.turnToHeading(-45 * TeamColorInt, 800);
     
-    chassis.moveToPose(-55 * TeamColorInt, 25, -30 * TeamColorInt, 800, {.minSpeed = 100});
-    chassis.moveToPose(-62 * TeamColorInt, 32, 0, 1000);
+    chassis.moveToPose(-61 * TeamColorInt, 32, 0, 1500, {.minSpeed = 80});
+    chassis.moveToPoint(-61 * TeamColorInt, 32, 500, {.maxSpeed = 80});
 
-    pros::delay(500);
     Arm.move_absolute(1700, 200);
 
     chassis.waitUntilDone();
@@ -783,9 +784,9 @@ void Negative_A1_4R() {
 
 //--------------------------------------------------
 
-void Negative_TB() {
-    chassis.turnToPoint(14 * TeamColorInt, 30, 1000);
-    chassis.moveToPoint(14 * TeamColorInt, 30, 2000, {.minSpeed = 40});
+void TB(int PosOrNeg) {
+    chassis.turnToPoint(14 * PosOrNeg * TeamColorInt, 30, 1000);
+    chassis.moveToPoint(14 * PosOrNeg * TeamColorInt, 30, 2000, {.minSpeed = 40});
 
     chassis.waitUntilDone();
 }
@@ -817,7 +818,7 @@ void Skills() {
 
 void Negative_A1_4R_TB() {
     Negative_A1_4R();
-    Negative_TB();
+    TB(-1);
 }
 void Negative_A1_4R_PC() {
     Negative_A1_4R();
@@ -826,24 +827,26 @@ void Negative_A1_4R_PC() {
 
 void Negative_RingRush_5R_TB() {
     Negative_RingRush_5R();
-    Negative_TB();
+    TB(-1);
 }
 
 void Negative_RingRush_6R_TB() {
     Negative_RingRush_6R();
-    Negative_TB();
+    TB(-1);
 }
 
 void SoloAWP_TB() {
     SoloAWP();
-    Negative_TB();
+    TB(-1);
 }
 
 
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-    Positive_GoalRush_2R_WS();
+    //Positive_GoalRush_2R_WS();
+
+    SoloAWP();
 }
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
