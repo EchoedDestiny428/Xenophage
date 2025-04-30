@@ -1,7 +1,7 @@
 {
   "py/object": "pros.conductor.project.Project",
   "py/state": {
-    "project_name": "Zipties",
+    "project_name": "Xenophage",
     "target": "v5",
     "templates": {
       "LemLib": {

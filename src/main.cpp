@@ -426,13 +426,13 @@ void IntakeJamPrevAuto() {
 //----------------------Solo AWP----------------------
 
 void SoloAWP() {
-    chassis.setPose(12 * TeamColorInt, -12, -120);
+    chassis.setPose(12 * TeamColorInt, -12, -120 * TeamColorInt);
     LadyBrownOdom.set_position(ArmLoadPos * 100);
     Arm.set_zero_position(ArmLoadPos * 10);
     pros::delay(20);
 
-    ArmPIDtoPosition(ScoreAlliancePos, 800);
-    chassis.moveToPoint(24 * TeamColorInt, 25, 1600, {.forwards = false, .minSpeed = 50});
+    ArmPIDtoPosition(ScoreAlliancePos + 50, 800);
+    chassis.moveToPoint(26 * TeamColorInt, 25, 1600, {.forwards = false, .minSpeed = 30});
     
     Arm.move_absolute(10, 200);
     chassis.waitUntilDone();
@@ -448,28 +448,35 @@ void SoloAWP() {
     IntakeFlex.move_velocity(200);
     IntakeHook.move_velocity(600);
 
+    chassis.turnToHeading(100 * TeamColorInt, 800);
     chassis.moveToPoint(48 * TeamColorInt, 24, 1000);
-    chassis.turnToPoint(0, 0, 1000);
+    pros::delay(200);
+    chassis.turnToPoint(42 * TeamColorInt, 18, 1000);
     chassis.waitUntilDone();
-    Lift.set_value(4096);
-    chassis.moveToPoint(0, 0, 1000, {.minSpeed = 100});
-    chassis.waitUntilDone();
-    pros::delay(500);
+    chassis.moveToPoint(42 * TeamColorInt, 18, 1000, {.minSpeed = 100});
+    chassis.moveToPoint(-4 * TeamColorInt, 0, 1000, {.maxSpeed = 80});
 
+    chassis.waitUntilDone();
     MobileGoal.set_value(0);
     MogoToggle = 1; // because we droppped the Mogoal
-    Lift.set_value(0);
 
     //-----------------------------------------------
+    
+    chassis.moveToPoint(-24 * TeamColorInt, 0, 1500, {.maxSpeed = 50});
+    chassis.waitUntilDone();
+    IntakeHook.brake();
 
-    // chassis.turnToHeading(135 * TeamColorInt, 1000);
-    // chassis.moveToPoint(-24 * TeamColorInt, 24, 1000, {.forwards = false});
-    // chassis.waitUntilDone();
-    // MobileGoal.set_value(4096);
-    // MogoToggle = -1; // because we are holding the a Mogoal
 
-    // chassis.turnToHeading(-90 * TeamColorInt, 1000);
-    // chassis.moveToPoint(-24 * TeamColorInt, 24, 1000);
+    chassis.turnToHeading(180 * TeamColorInt, 1000);
+    chassis.moveToPoint(-24 * TeamColorInt, 24, 1000, {.forwards = false});
+    chassis.waitUntilDone();
+    IntakeHook.move_velocity(600);
+
+    MobileGoal.set_value(4096);
+    MogoToggle = -1; // because we are holding the a Mogoal
+
+    chassis.turnToHeading(-90 * TeamColorInt, 1000);
+    //chassis.moveToPoint(-24 * TeamColorInt, 24, 1000);
 
 
     chassis.waitUntilDone();
@@ -853,25 +860,22 @@ void SoloAWP_TB() {
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-    Positive_GoalRush_2R_WS();
-
-    //SoloAWP();
+    SoloAWP();
 }
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
 
 
 void opcontrol() { //Driver
-    // pros::rtos::Task TaskChassisControl(ChassisControl);
-    // pros::rtos::Task TaskArmControl(ArmControl);
-    // pros::rtos::Task TaskFuncIntake(FuncIntake);
-    // pros::rtos::Task TaskFuncMogo(FuncMogo);
-    // pros::rtos::Task TaskEject(DriverEject);
-    // pros::rtos::Task TaskDoiner(DoinkerControl);
+    pros::rtos::Task TaskChassisControl(ChassisControl);
+    pros::rtos::Task TaskArmControl(ArmControl);
+    pros::rtos::Task TaskFuncIntake(FuncIntake);
+    pros::rtos::Task TaskFuncMogo(FuncMogo);
+    pros::rtos::Task TaskEject(DriverEject);
+    pros::rtos::Task TaskDoiner(DoinkerControl);
     //pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
 
-    autonomous();
-    
+        
     while (true) {
 
 		pros::delay(20);                               // Run for 20 ms then update
