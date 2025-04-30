@@ -697,7 +697,7 @@ void Negative_RingRush_5R() {
     chassis.turnToHeading(135 * TeamColorInt, 500);
 
     chassis.moveToPoint(72 * TeamColorInt, -24, 900, {.minSpeed = 127});
-    chassis.moveToPoint(55.7 * TeamColorInt, -2.4, 1000, {.forwards = false, .maxSpeed = 70});
+    chassis.moveToPoint(55.7 * TeamColorInt, -2.3, 1000, {.forwards = false, .maxSpeed = 70});
 
     chassis.moveToPoint(56 * TeamColorInt, -6, 800, {.minSpeed = 80});
     chassis.waitUntilDone();
@@ -872,16 +872,16 @@ void A1_TB() {
 }
 
 void Negative_MidRingLB() {
-    chassis.turnToHeading(45 * TeamColorInt, 1000);
-    chassis.waitUntilDone();
-
+    chassis.turnToHeading(-45 * TeamColorInt, 1000);
+    
+    chassis.moveToPoint(9 * TeamColorInt, 36, 2000);
+    pros::delay(400);
     if (TeamColor) {
         DoinkerRight.set_value(4096);
     } else {
         DoinkerLeft.set_value(4096);
     }
-
-    chassis.moveToPoint(10 * TeamColorInt, 38, 1000, {.forwards = false});
+    IntakeHook.brake();
 
     chassis.waitUntilDone();
 }
