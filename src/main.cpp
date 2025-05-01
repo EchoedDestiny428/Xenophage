@@ -259,6 +259,7 @@ void DriverEject() {
 double ArmLoadPos = 27.50;
 double ArmTipPos = 180.00;
 double ScoreAlliancePos = 186.00;
+double DescorePos = 164.00;
 
 void ArmPIDtoPosition(double target, double timeout) {
     double ArmKp = 4.00; // Proportional Modifier
@@ -299,7 +300,7 @@ void ArmControl() {
   
     while (true) { 
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
-            ArmPIDtoPosition(ScoreAlliancePos, 0);
+            ArmPIDtoPosition(DescorePos, 0);
             
         } else if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && (ArmPos() < (ArmLoadPos-10.0))) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
             ArmPIDtoPosition(ArmLoadPos, 0);
@@ -334,8 +335,8 @@ void FuncIntake() {
     while (true) {
         if (((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 1 && IntakeToggle == -1)) {
             if (((LadyBrownOdom.get_position()) > ((ArmLoadPos-4)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+4)*100))) {
-                IntakeHook.move_velocity(IntakeSpeed * -6);
-                pros::delay(50);
+                IntakeHook.move_relative(-100, 600);
+                pros::delay(100);
                 IntakeHook.brake();
                 IntakeToggle = 1;
             } else {
@@ -874,7 +875,7 @@ void A1_TB() {
 void Negative_MidRingLB() {
     chassis.turnToHeading(-45 * TeamColorInt, 1000);
     
-    chassis.moveToPoint(9 * TeamColorInt, 36, 2000);
+    chassis.moveToPoint(9 * TeamColorInt, 37, 2000);
     pros::delay(400);
     if (TeamColor) {
         DoinkerRight.set_value(4096);
