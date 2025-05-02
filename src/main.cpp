@@ -18,8 +18,9 @@ pros::adi::DigitalOut DoinkerLeft('E');
 pros::adi::DigitalOut DoinkerRight('A');
 
 pros::Rotation LadyBrownOdom(-3);
-pros::Optical VSensor(10);
-pros::Imu Inertial(8); 
+pros::Optical VSensor(8);
+pros::Distance Distance(10);
+pros::Imu Inertial(21); 
 pros::Rotation HorizontalEnc(6);
 pros::Rotation VerticalEnc(-13);
 
@@ -81,7 +82,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 //----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
 
-bool TeamColor = true; //true = blue, red = false 
+bool TeamColor = false; //true = blue, red = false 
 int TeamColorInt;
 bool skillz = false;
 
@@ -229,34 +230,42 @@ void FuncMogo() {
 //--------------------------------------------------------------------------------Eject & ColorSensor--------------------------------------------------------------------------------
 
 
-
 void DriverEject() {
     VSensor.set_led_pwm(100);
-    //VSensor.set_integration_time(5);
+    IntakeHook.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+
+    float EjectDistance = 270.0;
+    bool RingColor; //true = blue, false = red
 
     while (true) {
-        int opticalHue = VSensor.get_hue();
-        pros::lcd::print(3, "------------VSensor Hue: %f",  VSensor.get_hue());
-        
-        if (!TeamColor && (opticalHue > blueHueMin) && (opticalHue < blueHueMax) && (MogoToggle == -1)) {
-            pros::delay(30);
+        if ((Distance.get() < 50) && (MogoToggle == -1)) {
+            IntakeHook.tare_position();
+            IntakeHook.move_velocity(300);
+
+            while (IntakeHook.get_position() < EjectDistance) {
+                int opticalHue = VSensor.get_hue();
+
+                if (TeamColor && (opticalHue > blueHueMin) && (opticalHue < blueHueMax)) {
+                    goto exitEject;
+                } else if (!TeamColor && (opticalHue > redHueMin) && (opticalHue < redHueMax)) {
+                    goto exitEject;
+                }
+
+                pros::delay(5);
+            }
             IntakeHook.brake();
-            pros::delay(100);
-            IntakeHook.move_velocity(600);
-        } else if (TeamColor && (opticalHue > redHueMin) && (opticalHue < redHueMax) && (MogoToggle == -1)) {
-            pros::delay(30);
-            IntakeHook.brake();
-            pros::delay(100);
+            pros::delay(400);
             IntakeHook.move_velocity(600);
 
+            exitEject:
         }
-        pros::delay(2);
+        pros::delay(20);
     }
 }
 
 //--------------------------------------------------------------------------------Arm--------------------------------------------------------------------------------
 
-double ArmLoadPos = 27.50;
+double ArmLoadPos = 29.50;
 double ArmTipPos = 180.00;
 double ScoreAlliancePos = 186.00;
 double DescorePos = 164.00;
@@ -331,7 +340,7 @@ void ArmControl() {
 
 void FuncIntake() {
     int IntakeToggle = 1;
-    int IntakeSpeed = 95; //100 for skills, 90 regular
+    int IntakeSpeed = 100; //100 for skills, 90 regular
     while (true) {
         if (((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 1 && IntakeToggle == -1)) {
             if (((LadyBrownOdom.get_position()) > ((ArmLoadPos-4)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+4)*100))) {
@@ -340,9 +349,9 @@ void FuncIntake() {
                 IntakeHook.brake();
                 IntakeToggle = 1;
             } else {
-                IntakeHook.move_velocity(IntakeSpeed * -6);
-                pros::delay(50);
-                IntakeHook.move_velocity(IntakeSpeed * 6);
+                // IntakeHook.move_velocity(IntakeSpeed * -6);
+                // pros::delay(50);
+                // IntakeHook.move_velocity(IntakeSpeed * 6);
             }
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
             while (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
@@ -498,8 +507,8 @@ void Positive_GoalRush_2R_WS() {
     }
     IntakeFlex.move_velocity(200);
 
-    chassis.moveToPoint(-47.5 * TeamColorInt, 29.5, 700, {.minSpeed = 127});
-    chassis.moveToPoint(-47.5 * TeamColorInt, 29.5, 1000);
+    chassis.moveToPoint(-47.5 * TeamColorInt, 28.5, 600, {.minSpeed = 127});
+    chassis.moveToPoint(-47.5 * TeamColorInt, 28.5, 400);
     pros::delay(200);
     DoinkerRight.set_value(0);
     DoinkerLeft.set_value(0);
@@ -568,7 +577,7 @@ void Positive_GoalRush_2R_WS() {
         DoinkerRight.set_value(4096);
     }
     chassis.turnToPoint(-48 * TeamColorInt, -10, 400);
-    chassis.moveToPoint(-50 * TeamColorInt, -10, 800, {.minSpeed = 80});
+    chassis.moveToPoint(-49.5 * TeamColorInt, -10, 800, {.minSpeed = 80});
     chassis.turnToHeading(0, 1000, {.direction = AngularDirection::CCW_COUNTERCLOCKWISE});
     chassis.waitUntilDone();
 
@@ -577,8 +586,9 @@ void Positive_GoalRush_2R_WS() {
     DoinkerLeft.set_value(0);
     DoinkerRight.set_value(0);
 
-    chassis.moveToPose(-68.5 * TeamColorInt, 36, -5 * TeamColorInt, 2000);
+    chassis.moveToPose(-65.8 * TeamColorInt, 35.2, -1 * TeamColorInt, 2000);
     pros::delay(500);
+    Arm.move_absolute(1000, 200);
 
     IntakeHook.brake();
     IntakeFlex.move_velocity(-200);
@@ -587,10 +597,11 @@ void Positive_GoalRush_2R_WS() {
 
 
     chassis.waitUntilDone();
-    Arm.move_absolute(1400, 200);
-
-
-    chassis.waitUntilDone();
+    Arm.move_absolute(1600, 200);
+    pros::delay(400);
+    chassis.moveToPose(-24 * TeamColorInt, 36, -90 * TeamColorInt, 1000, {.forwards = false, .minSpeed = 127});
+    pros::delay(400);
+    Arm.move_absolute(30, 200);
 }
 
 void Positive_A1_4R() {
@@ -940,7 +951,7 @@ void SoloAWP_TB() {
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-    Negative_RingRush_6R_LBR();
+    Positive_GoalRush_2R_WS();
 }
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
