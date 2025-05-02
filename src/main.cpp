@@ -198,7 +198,7 @@ void ChassisControl() {
 
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
             chassis.setPose(0, 0, 0);
-            chassis.moveToPoint(0, -9, 800, {.minSpeed = 127});
+            chassis.moveToPoint(0, -9, 800, {.forwards = false, .minSpeed = 50});
             chassis.waitUntilDone();
         }
 
@@ -255,9 +255,10 @@ void DriverEject() {
             }
             IntakeHook.brake();
             pros::delay(400);
-            IntakeHook.move_velocity(600);
+            
 
             exitEject:
+            IntakeHook.move_velocity(600);
         }
         pros::delay(20);
     }
@@ -324,7 +325,7 @@ void ArmControl() {
             Arm.move_velocity(-200);
             if (ArmPos() < 0) {
                 LadyBrownOdom.reset_position();
-            } 
+            }
         } else {
             Arm.brake();
         }
@@ -342,21 +343,22 @@ void FuncIntake() {
     int IntakeToggle = 1;
     int IntakeSpeed = 100; //100 for skills, 90 regular
     while (true) {
-        if (((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 1 && IntakeToggle == -1)) {
-            if (((LadyBrownOdom.get_position()) > ((ArmLoadPos-4)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+4)*100))) {
+        if (((IntakeHook.get_torque() > 0.15) && IntakeHook.get_actual_velocity() < 5 && IntakeToggle == -1)) {
+            if (((LadyBrownOdom.get_position()) > ((ArmLoadPos-8)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+2)*100))) {
                 IntakeHook.move_relative(-100, 600);
-                pros::delay(100);
+                pros::delay(200);
                 IntakeHook.brake();
                 IntakeToggle = 1;
             } else {
-                // IntakeHook.move_velocity(IntakeSpeed * -6);
-                // pros::delay(50);
-                // IntakeHook.move_velocity(IntakeSpeed * 6);
+                IntakeHook.move_relative(-100, 600);
+                pros::delay(150);
+                IntakeHook.move_velocity(IntakeSpeed * 6);
             }
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
             while (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
                 IntakeFlex.move_velocity(IntakeSpeed * -2);
                 IntakeHook.move_velocity(IntakeSpeed * -6);
+                pros::delay(20);
             }
             if (IntakeToggle == 1) {
                 IntakeFlex.brake();
