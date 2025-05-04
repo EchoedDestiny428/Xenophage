@@ -487,6 +487,8 @@ void FuncMacros() {
     while (true) {
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
             if (((LadyBrownOdom.get_position()) > ((ArmLoadPos-8)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+2)*100))) {
+                IntakeHook.move_relative(-120, 200);
+                pros::delay(200);
                 ArmPIDtoPosition(170, 1000);
                 ArmPIDtoPosition(ArmLoadPos, 1000);
                 IntakeHook.move_velocity(600);
