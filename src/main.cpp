@@ -229,6 +229,7 @@ void FuncMogo() {
 
 //--------------------------------------------------------------------------------Eject & ColorSensor--------------------------------------------------------------------------------
 
+int IntakeToggle = 1;
 
 void DriverEject() {
     VSensor.set_led_pwm(100);
@@ -249,6 +250,8 @@ void DriverEject() {
                     goto exitEject;
                 } else if (!TeamColor && (opticalHue > redHueMin) && (opticalHue < redHueMax)) {
                     goto exitEject;
+                } else if (IntakeToggle == 1) {
+                    goto intakeActuallyTurnedOffToAnnoyMeAndIHaveToCreateASolution;
                 }
 
                 pros::delay(5);
@@ -259,6 +262,10 @@ void DriverEject() {
 
             exitEject:
             IntakeHook.move_velocity(600);
+            break;
+
+            intakeActuallyTurnedOffToAnnoyMeAndIHaveToCreateASolution:
+            IntakeHook.brake();
         }
         pros::delay(20);
     }
@@ -309,7 +316,7 @@ double DescorePos = 160.00;
 bool ArmPIDing = false;
 
 void ArmPIDtoPosition(double target, double timeout) {
-    double ArmKp = 4.00; // Proportional Modifier
+    double ArmKp = 3.50; // Proportional Modifier
     double ArmKd = 3.20; // Derivative Modifier
     double error;
     double prevError = 0;
@@ -357,12 +364,13 @@ void ArmControl() {
             ArmPIDtoPosition(3.00, 0);
             
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
-            // if (((LadyBrownOdom.get_position()) > ((ArmLoadPos-8)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+2)*100))) {
-            //     IntakeHook.move_relative(-150, 600);
-            //     pros::delay(200);
-            //     Arm.move_relative(200, 200);
-            //     pros::delay(200);
-            // }
+            if (((LadyBrownOdom.get_position()) > ((ArmLoadPos-8)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+2)*100))) {
+                IntakeHook.move_relative(-120, 600);
+                pros::delay(200);
+                while (((LadyBrownOdom.get_position()) > ((ArmLoadPos-8)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+2)*100))) {
+                    Arm.move_velocity(200);
+                }
+            }
             Arm.move_velocity(200);
 
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) { 
@@ -384,13 +392,12 @@ void ArmControl() {
 
 
 void FuncIntake() {
-    int IntakeToggle = 1;
     int IntakeSpeed = 100; //100 for skills, 90 regular
     while (true) {
-        if (((IntakeHook.get_torque() > 0.15) && IntakeHook.get_actual_velocity() < 5 && IntakeToggle == -1)) {
+        if (((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 5 && IntakeToggle == -1)) {
             if (((LadyBrownOdom.get_position()) > ((ArmLoadPos-8)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+2)*100))) {
-                IntakeHook.move_relative(-120, 600);
-                pros::delay(200);
+                // IntakeHook.move_relative(-120, 600);
+                // pros::delay(200);
                 IntakeHook.brake();
                 IntakeToggle = 1;
             } else {
@@ -420,7 +427,7 @@ void FuncIntake() {
                 IntakeFlex.brake();
                 IntakeHook.brake();
                 IntakeHook.move_relative(-30, 600); 
-                pros::delay(50);
+                pros::delay(150);
             }
             IntakeToggle *= -1;
             pros::delay(500);
@@ -1009,6 +1016,7 @@ void autonomous() {
 
 
 void opcontrol() { //Driver
+    autonomousRunning = false;
     pros::rtos::Task TaskMacros(FuncMacros);
     pros::rtos::Task TaskChassisControl(ChassisControl);
     pros::rtos::Task TaskArmControl(ArmControl);
@@ -1017,7 +1025,7 @@ void opcontrol() { //Driver
     pros::rtos::Task TaskEject(DriverEject);
     pros::rtos::Task TaskDoiner(DoinkerControl);
     //pros::rtos::Task TaskFuncIntakeLift(FuncIntakeLift);
-    autonomousRunning = false;
+    
 
         
     while (true) {
