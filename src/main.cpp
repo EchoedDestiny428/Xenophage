@@ -572,6 +572,7 @@ void SoloAWP() {
 
 void Positive_GoalRush_3R() {
     pros::rtos::Task PrevJam(IntakeJamPrevAuto);
+    //pros::rtos::Task AutoSort(AutoEject);
     chassis.setPose(-33.7 * TeamColorInt, -6, -21 * TeamColorInt);
     if (TeamColor) {
         DoinkerRight.set_value(4096);
@@ -596,6 +597,8 @@ void Positive_GoalRush_3R() {
         DoinkerLeft.set_value(4096);
     }
     
+
+    chassis.turnToHeading(180, 800);
     chassis.turnToPoint(-23 * TeamColorInt, 23, 800, {.forwards = false});
     chassis.waitUntilDone();
     pros::delay(150);
@@ -1009,7 +1012,8 @@ void SoloAWP_TB() {
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-    Positive_GoalRush_3R();
+    //Positive_GoalRush_3R();
+    Negative_RingRush_A1_5R_TB();
 }
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
