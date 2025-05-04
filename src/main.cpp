@@ -779,7 +779,7 @@ void Negative_RingRush_5R() {
     chassis.moveToPoint(70 * TeamColorInt, -16, 900, {.maxSpeed = 100, .minSpeed = 127}, false);
     pros::delay(200);
     chassis.moveToPoint(50 * TeamColorInt, 1, 1000, {.forwards = false, .maxSpeed = 80});
-    chassis.moveToPoint(60 * TeamColorInt, -10, 800, {.maxSpeed = 80, .minSpeed = 80});
+    chassis.moveToPoint(57 * TeamColorInt, -8, 800, {.maxSpeed = 80, .minSpeed = 80});
     chassis.moveToPoint(56 * TeamColorInt, -7, 1000, {.forwards = false, .maxSpeed = 60});
 
     // //---------------------------------------
@@ -921,7 +921,7 @@ void A1_TB() {
     chassis.turnToPoint(-2 * TeamColorInt, -8.5, 800);
     chassis.moveToPoint(-2 * TeamColorInt, -8.5, 1500);
     pros::delay(400);
-    Arm.move_absolute(ArmLoadPos*10+20, 200);
+    Arm.move_absolute(ArmLoadPos*10+40, 200);
 
     doingWallstake = true;
     chassis.waitUntilDone();
@@ -940,7 +940,12 @@ void A1_TB() {
 
     pros::delay(300);
     chassis.moveToPoint(0, 0, 500, {.forwards = false, .minSpeed = 127});
-    chassis.turnToHeading(10 * TeamColorInt, 1000, {.maxSpeed = 80});
+
+    if (TeamColor) {
+        chassis.turnToHeading(5 * TeamColorInt, 1000, {.maxSpeed = 80});
+    } else {
+        chassis.turnToHeading(15 * TeamColorInt, 1000, {.maxSpeed = 80});
+    }
 }
 
 void Negative_MidRingLB() {
@@ -1013,8 +1018,8 @@ void SoloAWP_TB() {
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-    Positive_GoalRush_3R();
-    //Negative_RingRush_A1_5R_TB();
+    //Positive_GoalRush_3R();
+    Negative_RingRush_A1_5R_TB();
 }
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
