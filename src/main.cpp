@@ -264,6 +264,42 @@ void DriverEject() {
     }
 }
 
+bool autonomousRunning = true;
+
+void AutoEject() {
+    VSensor.set_led_pwm(100);
+    IntakeHook.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+
+    float EjectDistance = 260.0;
+    bool RingColor; //true = blue, false = red
+
+    while (autonomousRunning) {
+        if ((Distance.get() < 50) && (MogoToggle == -1)) {
+            IntakeHook.tare_position();
+            IntakeHook.move_velocity(300);
+
+            while (IntakeHook.get_position() < EjectDistance) {
+                int opticalHue = VSensor.get_hue();
+
+                if (TeamColor && (opticalHue > blueHueMin) && (opticalHue < blueHueMax)) {
+                    goto exitEject;
+                } else if (!TeamColor && (opticalHue > redHueMin) && (opticalHue < redHueMax)) {
+                    goto exitEject;
+                }
+
+                pros::delay(5);
+            }
+            IntakeHook.brake();
+            pros::delay(400);
+            
+
+            exitEject:
+            IntakeHook.move_velocity(600);
+        }
+        pros::delay(20);
+    }
+}
+
 //--------------------------------------------------------------------------------Arm--------------------------------------------------------------------------------
 
 double ArmLoadPos = 29.50;
@@ -417,14 +453,14 @@ void FuncIntakeLift() {
 }
 
 bool doingWallstake = false;
-bool autonomousRunning = true;
+
 
 void IntakeJamPrevAuto() {
-    while (true) {
-        if ((IntakeHook.get_torque() > 0.2) && (IntakeHook.get_actual_velocity() < 1) && autonomousRunning) {
+    while (autonomousRunning) {
+        if ((IntakeHook.get_torque() > 0.2) && (IntakeHook.get_actual_velocity() < 1)) {
             if (doingWallstake) {
                 IntakeHook.move_velocity(600);
-                pros::delay(200);
+                pros::delay(400);
                 IntakeHook.move_relative(-120, 600);
                 pros::delay(200);
                 IntakeHook.brake();
@@ -691,6 +727,7 @@ void Negative_A0() {
 
 void Negative_RingRush_5R() {
     pros::rtos::Task TaskIntakeJam(IntakeJamPrevAuto);
+    pros::rtos::Task TaskAutoEject(AutoEject);
     Arm.tare_position();
     chassis.setPose(26.5 * TeamColorInt, -2.5, 19 * TeamColorInt);
     pros::delay(20);
@@ -702,14 +739,13 @@ void Negative_RingRush_5R() {
         DoinkerLeft.set_value(4096);
     }
 
-    IntakeFlex.move_velocity(200);
-
-    chassis.moveToPoint(40.0 * TeamColorInt, 38, 800, {.minSpeed = 127});
-    chassis.moveToPoint(40.0 * TeamColorInt, 38, 300, {}, false);
+    chassis.moveToPoint(39.5 * TeamColorInt, 38.5, 700, {.minSpeed = 127});
+    chassis.moveToPoint(39.5 * TeamColorInt, 38.5, 300, {}, false);
     pros::delay(200);
 
     //----------------------------------------
 
+    chassis.swingToPoint(20 * TeamColorInt, 24, DriveSide::RIGHT, 500, {.forwards = false});
     chassis.moveToPoint(20 * TeamColorInt, 24, 800, {.forwards = false, .minSpeed = 30}, false);
 
     // // while (chassis.getPose().x > 30 * TeamColorInt) {
@@ -730,18 +766,19 @@ void Negative_RingRush_5R() {
     pros::delay(200);
     chassis.turnToHeading(90 * TeamColorInt, 400);
 
-    chassis.moveToPoint(48 * TeamColorInt, 24, 1000, {}, false);
-    pros::delay(400);
+    chassis.moveToPoint(46 * TeamColorInt, 24, 1000, {}, false);
+    pros::delay(300);
 
     // //----------------------------------------
 
-    chassis.moveToPoint(55 * TeamColorInt, -5, 2500);
+    chassis.moveToPoint(55 * TeamColorInt, -5, 2000);
     chassis.turnToHeading(131 * TeamColorInt, 500);
 
-    chassis.moveToPoint(70 * TeamColorInt, -16, 900, {.maxSpeed = 100, .minSpeed = 127});
-    chassis.moveToPoint(50 * TeamColorInt, -1, 1000, {.forwards = false, .maxSpeed = 80});
-    chassis.moveToPoint(70 * TeamColorInt, -16, 800, {.minSpeed = 100});
-    chassis.moveToPoint(56 * TeamColorInt, -7, 1500, {.forwards = false, .maxSpeed = 60});
+    chassis.moveToPoint(70 * TeamColorInt, -16, 900, {.maxSpeed = 100, .minSpeed = 127}, false);
+    pros::delay(200);
+    chassis.moveToPoint(50 * TeamColorInt, 1, 1000, {.forwards = false, .maxSpeed = 80});
+    chassis.moveToPoint(60 * TeamColorInt, -10, 800, {.minSpeed = 100});
+    chassis.moveToPoint(56 * TeamColorInt, -7, 1000, {.forwards = false, .maxSpeed = 60});
 
     // //---------------------------------------
 
@@ -879,28 +916,29 @@ void Negative_PC() {
 }
 
 void A1_TB() {
-    chassis.turnToPoint(-4.0 * TeamColorInt, -11.0, 800);
-    chassis.moveToPoint(-4.0 * TeamColorInt, -11.0, 700);
+    chassis.turnToPoint(-2 * TeamColorInt, -8.5, 800);
+    chassis.moveToPoint(-2 * TeamColorInt, -8.5, 1500);
     pros::delay(400);
     Arm.move_absolute(ArmLoadPos*10, 200);
-    chassis.moveToPose(-4.0 * TeamColorInt, -11.0, -120 * TeamColorInt, 1000);
-    
 
     doingWallstake = true;
     chassis.waitUntilDone();
-    IntakeFlex.brake();
     
     // IntakeHook.move_velocity(-400);
     // pros::delay(200);
 
-    
-    chassis.turnToHeading(175 * TeamColorInt, 700);
+    chassis.turnToHeading(175 * TeamColorInt, 500);
+    chassis.moveToPoint(-0.8 * TeamColorInt, -19, 1000, {.maxSpeed = 80, .minSpeed = 80});
     chassis.waitUntilDone();
+    pros::delay(100);
+    chassis.setPose(0, -14.5, 180 * TeamColorInt);
+    chassis.waitUntilDone();
+    chassis.moveToPoint(0, -5.8, 1000, {.forwards = false});
+    Arm.move_absolute(ScoreAlliancePos * 10 + 50, 200);
 
-    Arm.move_absolute(ScoreAlliancePos * 10, 200);
-    pros::delay(800);
-    chassis.moveToPoint(0, 12, 800, {.forwards = false});
-    chassis.turnToHeading(15 * TeamColorInt, 1000);
+    pros::delay(200);
+    chassis.moveToPoint(0, 0, 500, {.forwards = false, .minSpeed = 127});
+    chassis.turnToHeading(5 * TeamColorInt, 1000);
 }
 
 void Negative_MidRingLB() {
@@ -973,7 +1011,7 @@ void SoloAWP_TB() {
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-    Negative_RingRush_5R();
+    Negative_RingRush_A1_5R_TB();
 }
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
