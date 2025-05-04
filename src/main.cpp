@@ -920,7 +920,7 @@ void A1_TB() {
     chassis.turnToPoint(-2 * TeamColorInt, -8.5, 800);
     chassis.moveToPoint(-2 * TeamColorInt, -8.5, 1500);
     pros::delay(400);
-    Arm.move_absolute(ArmLoadPos*10, 200);
+    Arm.move_absolute(ArmLoadPos*10+10, 200);
 
     doingWallstake = true;
     chassis.waitUntilDone();
@@ -935,11 +935,11 @@ void A1_TB() {
     chassis.setPose(0, -14.5, 180 * TeamColorInt);
     chassis.waitUntilDone();
     chassis.moveToPoint(0, -5.8, 1000, {.forwards = false});
-    Arm.move_absolute(ScoreAlliancePos * 10 + 50, 200);
+    Arm.move_absolute(ScoreAlliancePos * 10 + 100, 200);
 
-    pros::delay(200);
+    pros::delay(300);
     chassis.moveToPoint(0, 0, 500, {.forwards = false, .minSpeed = 127});
-    chassis.turnToHeading(10 * TeamColorInt, 1000);
+    chassis.turnToHeading(10 * TeamColorInt, 1000, {.maxSpeed = 80});
 }
 
 void Negative_MidRingLB() {
