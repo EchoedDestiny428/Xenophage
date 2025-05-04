@@ -82,7 +82,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 //----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
 
-bool TeamColor = false; //true = blue, red = false 
+bool TeamColor = true; //true = blue, red = false 
 int TeamColorInt;
 bool skillz = false;
 
@@ -141,8 +141,8 @@ bool EjectStay = false;
 int redHueMax = 30;
 int redHueMin = 0;
 
-int blueHueMax = 220;
-int blueHueMin = 180;
+int blueHueMax = 240;
+int blueHueMin = 160;
 
 // red = 30-50
 // blue = 100-150
@@ -274,7 +274,7 @@ void AutoEject() {
     bool RingColor; //true = blue, false = red
 
     while (autonomousRunning) {
-        if ((Distance.get() < 50) && (MogoToggle == -1)) {
+        if ((Distance.get() < 50)) {
             IntakeHook.tare_position();
             IntakeHook.move_velocity(300);
 
@@ -727,7 +727,7 @@ void Negative_A0() {
 
 void Negative_RingRush_5R() {
     pros::rtos::Task TaskIntakeJam(IntakeJamPrevAuto);
-    pros::rtos::Task TaskAutoEject(AutoEject);
+    //pros::rtos::Task TaskAutoEject(AutoEject);
     Arm.tare_position();
     chassis.setPose(26.5 * TeamColorInt, -2.5, 19 * TeamColorInt);
     pros::delay(20);
@@ -745,7 +745,12 @@ void Negative_RingRush_5R() {
 
     //----------------------------------------
 
-    chassis.swingToPoint(20 * TeamColorInt, 24, DriveSide::RIGHT, 500, {.forwards = false});
+    if (TeamColor) {
+        chassis.swingToPoint(20 * TeamColorInt, 24, DriveSide::LEFT, 500, {.forwards = false});
+    } else {
+        chassis.swingToPoint(20 * TeamColorInt, 24, DriveSide::RIGHT, 500, {.forwards = false});
+
+    }
     chassis.moveToPoint(20 * TeamColorInt, 24, 800, {.forwards = false, .minSpeed = 30}, false);
 
     // // while (chassis.getPose().x > 30 * TeamColorInt) {
@@ -766,7 +771,7 @@ void Negative_RingRush_5R() {
     pros::delay(200);
     chassis.turnToHeading(90 * TeamColorInt, 400);
 
-    chassis.moveToPoint(46 * TeamColorInt, 24, 1000, {}, false);
+    chassis.moveToPoint(46 * TeamColorInt, 24, 1000, {.maxSpeed = 110}, false);
     pros::delay(300);
 
     // //----------------------------------------
@@ -938,7 +943,7 @@ void A1_TB() {
 
     pros::delay(200);
     chassis.moveToPoint(0, 0, 500, {.forwards = false, .minSpeed = 127});
-    chassis.turnToHeading(15 * TeamColorInt, 1000);
+    chassis.turnToHeading(10 * TeamColorInt, 1000);
 }
 
 void Negative_MidRingLB() {
