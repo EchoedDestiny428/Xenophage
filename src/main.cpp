@@ -82,7 +82,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 //----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
 
-bool TeamColor = false; //true = blue, red = false 
+bool TeamColor = true; //true = blue, red = false 
 int TeamColorInt;
 bool skillz = false;
 
@@ -660,8 +660,9 @@ void Positive_GoalRush_3R() {
     IntakeHook.move_velocity(600);
     pros::delay(400);
     chassis.turnToPoint(-12 * TeamColorInt, 36, 1000);
-    chassis.moveToPoint(-12 * TeamColorInt, 36, 1000);
+    chassis.moveToPoint(-12 * TeamColorInt, 36, 1000, {}, false);
 
+    Arm.move_absolute(ArmLoadPos * 10 - 20, 200);
 
     chassis.waitUntilDone();
 }
@@ -919,8 +920,8 @@ void Negative_PC() {
 void A1_TB() {
     chassis.turnToPoint(-2 * TeamColorInt, -8.5, 800);
     chassis.moveToPoint(-2 * TeamColorInt, -8.5, 1500);
-    pros::delay(800);
-    Arm.move_absolute(ArmLoadPos*10+10, 200);
+    pros::delay(400);
+    Arm.move_absolute(ArmLoadPos*10+20, 200);
 
     doingWallstake = true;
     chassis.waitUntilDone();
@@ -1012,8 +1013,8 @@ void SoloAWP_TB() {
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-    //Positive_GoalRush_3R();
-    Negative_RingRush_A1_5R_TB();
+    Positive_GoalRush_3R();
+    //Negative_RingRush_A1_5R_TB();
 }
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
