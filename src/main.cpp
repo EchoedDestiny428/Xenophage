@@ -82,7 +82,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 //----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
 
-bool TeamColor = true; //true = blue, red = false 
+bool TeamColor = false; //true = blue, red = false 
 int TeamColorInt;
 bool skillz = false;
 
@@ -243,15 +243,13 @@ void DriverEject() {
             IntakeHook.tare_position();
             IntakeHook.move_velocity(300);
 
-            while (IntakeHook.get_position() < EjectDistance) {
+            while ((IntakeHook.get_position() < EjectDistance) && IntakeToggle == -1) {
                 int opticalHue = VSensor.get_hue();
 
                 if (TeamColor && (opticalHue > blueHueMin) && (opticalHue < blueHueMax)) {
                     goto exitEject;
                 } else if (!TeamColor && (opticalHue > redHueMin) && (opticalHue < redHueMax)) {
                     goto exitEject;
-                } else if (IntakeToggle == 1) {
-                    goto intakeActuallyTurnedOffToAnnoyMeAndIHaveToCreateASolution;
                 }
 
                 pros::delay(5);
@@ -259,13 +257,12 @@ void DriverEject() {
             IntakeHook.brake();
             pros::delay(400);
             
-
             exitEject:
-            IntakeHook.move_velocity(600);
-            break;
-
-            intakeActuallyTurnedOffToAnnoyMeAndIHaveToCreateASolution:
-            IntakeHook.brake();
+            if (IntakeToggle == 1) {
+                IntakeHook.brake();
+            } else {
+                IntakeHook.move_velocity(600);
+            }
         }
         pros::delay(20);
     }
@@ -1018,8 +1015,8 @@ void SoloAWP_TB() {
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-    //Positive_GoalRush_3R();
-    Negative_RingRush_A1_5R_TB();
+    Positive_GoalRush_3R();
+    //Negative_RingRush_A1_5R_TB();
 }
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
