@@ -82,7 +82,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 //----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
 
-bool TeamColor = false; //true = blue, red = false 
+bool TeamColor = true; //true = blue, red = false 
 int TeamColorInt;
 bool skillz = false;
 
@@ -657,11 +657,23 @@ void Positive_GoalRush_3R() {
     chassis.moveToPoint(-40 * TeamColorInt, 35, 800, {.forwards = false}, false);
     MobileGoal.set_value(4096);
     IntakeHook.move_velocity(600);
+    
+    pros::delay(400);
+    chassis.waitUntilDone();
+}
+
+void P_GR_TB() {
     pros::delay(400);
     chassis.turnToPoint(-12 * TeamColorInt, 36, 1000);
     chassis.moveToPoint(-12 * TeamColorInt, 36, 1000, {}, false);
 
     Arm.move_absolute(ArmLoadPos * 10 - 20, 200);
+
+    chassis.waitUntilDone();
+}
+
+void P_GR_ELIM() {
+    chassis.turnToHeading(76 * TeamColorInt, 1000);
 
     chassis.waitUntilDone();
 }
@@ -947,6 +959,35 @@ void A1_TB() {
     }
 }
 
+void A1_CORNER() {
+    chassis.turnToPoint(-2 * TeamColorInt, -8.5, 800);
+    chassis.moveToPoint(-2 * TeamColorInt, -8.5, 1500);
+    pros::delay(400);
+    Arm.move_absolute(ArmLoadPos*10+40, 200);
+
+    doingWallstake = true;
+    chassis.waitUntilDone();
+    
+    // IntakeHook.move_velocity(-400);
+    // pros::delay(200);
+
+    chassis.turnToHeading(175 * TeamColorInt, 500);
+    chassis.moveToPoint(-0.8 * TeamColorInt, -19, 1000, {.maxSpeed = 80, .minSpeed = 80});
+    chassis.waitUntilDone();
+    pros::delay(100);
+    chassis.setPose(0, -14.5, 180 * TeamColorInt);
+    chassis.waitUntilDone();
+    chassis.moveToPoint(0, -5.8, 1000, {.forwards = false});
+    Arm.move_absolute(ScoreAlliancePos * 10 + 100, 200);
+
+    pros::delay(300);
+    chassis.moveToPoint(0, 0, 500, {.forwards = false, .minSpeed = 127});
+
+    chassis.turnToPoint(-72 * TeamColorInt, -20, 500, {.forwards = false});
+    chassis.moveToPoint(-72 * TeamColorInt, -20, 2000, {.forwards = false, .minSpeed = 127});
+}
+
+
 void Negative_MidRingLB() {
     chassis.turnToPoint(10 * TeamColorInt, 37, 800);
     chassis.moveToPoint(10 * TeamColorInt, 37, 700, {.minSpeed = 127});
@@ -989,6 +1030,11 @@ void Negative_RingRush_A1_5R_TB() {
     A1_TB();
 }
 
+void Negative_RingRush_A1_5R_CORNER() {
+    Negative_RingRush_5R();
+    A1_CORNER();
+}
+
 void Negative_RingRush_6R_LBR() {
     Negative_RingRush_5R();
     Negative_MidRingLB();
@@ -1013,12 +1059,27 @@ void SoloAWP_TB() {
     TB(-1); 
 }
 
+void Positive_GoalRush_3R_TB() {
+    Positive_GoalRush_3R();
+    P_GR_TB();
+}
+
+void Positive_GoalRush_3R_ELIM() {
+    Positive_GoalRush_3R();
+    P_GR_ELIM();
+}
+
 
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
-    Positive_GoalRush_3R();
+    // qual
+    Positive_GoalRush_3R_TB();
     //Negative_RingRush_A1_5R_TB();
+
+    //elim
+    //Positive_GoalRush_3R_ELIM();
+    //Negative_RingRush_A1_5R_CORNER();
 }
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
