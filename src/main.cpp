@@ -82,7 +82,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 //----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
 
-bool TeamColor = false; //true = blue, red = false 
+bool TeamColor = true; //true = blue, red = false 
 int TeamColorInt;
 bool skillz = false;
 
@@ -239,7 +239,7 @@ void DriverEject() {
     bool RingColor; //true = blue, false = red
 
     while (true) {
-        if ((Distance.get() < 50) && (MogoToggle == -1)) {
+        if ((Distance.get() < 50) && (MogoToggle == -1) && (!ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_A))) {
             IntakeHook.tare_position();
             IntakeHook.move_velocity(300);
 
@@ -354,7 +354,7 @@ void ArmControl() {
         if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
             ArmPIDtoPosition(DescorePos, 0);
             
-        } else if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && (ArmPos() < (ArmLoadPos-10.0))) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
+        } else if ((ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1) && (ArmPos() < (ArmLoadPos-10.0))) || ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
             ArmPIDtoPosition(ArmLoadPos, 0);
 
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) {
@@ -1093,7 +1093,7 @@ void autonomous() {
 
 void opcontrol() { //Driver
     autonomousRunning = false;
-    pros::rtos::Task TaskMacros(FuncMacros);
+    //pros::rtos::Task TaskMacros(FuncMacros);
     pros::rtos::Task TaskChassisControl(ChassisControl);
     pros::rtos::Task TaskArmControl(ArmControl);
     pros::rtos::Task TaskFuncIntake(FuncIntake);
