@@ -82,7 +82,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 //----------------------------------------------------------------------------------Global Variables----------------------------------------------------------------------------------
 
 
-bool TeamColor = true; //true = blue, red = false 
+bool TeamColor = false; //true = blue, red = false 
 int TeamColorInt;
 bool skillz = false;
 
@@ -278,7 +278,7 @@ void AutoEject() {
     bool RingColor; //true = blue, false = red
 
     while (autonomousRunning) {
-        if ((Distance.get() < 50)) {
+        if ((Distance.get() < 50) && IntakeHook.get_actual_velocity() > 50) {
             IntakeHook.tare_position();
             IntakeHook.move_velocity(300);
 
@@ -571,7 +571,6 @@ void SoloAWP() {
 
 void Positive_GoalRush_3R() {
     pros::rtos::Task PrevJam(IntakeJamPrevAuto);
-    //pros::rtos::Task AutoSort(AutoEject);
     chassis.setPose(-33.7 * TeamColorInt, -6, -21 * TeamColorInt);
     if (TeamColor) {
         DoinkerRight.set_value(4096);
@@ -643,6 +642,7 @@ void Positive_GoalRush_3R() {
     DoinkerLeft.set_value(0);
     DoinkerRight.set_value(0);
     pros::delay(500);
+    
 
     // if (TeamColor) {
     //     chassis.swingToPoint(-52 * TeamColorInt, 24, DriveSide::RIGHT, 800, {.forwards = false});
@@ -663,9 +663,8 @@ void Positive_GoalRush_3R() {
 }
 
 void P_GR_TB() {
-    pros::delay(400);
-    chassis.turnToPoint(-12 * TeamColorInt, 36, 1000);
-    chassis.moveToPoint(-12 * TeamColorInt, 36, 1000, {}, false);
+    chassis.turnToPoint(-12 * TeamColorInt, 34, 1000);
+    chassis.moveToPoint(-12 * TeamColorInt, 34, 1000, {}, false);
 
     Arm.move_absolute(ArmLoadPos * 10 - 20, 200);
 
@@ -735,7 +734,6 @@ void Negative_A0() {
 
 void Negative_RingRush_5R() {
     pros::rtos::Task TaskIntakeJam(IntakeJamPrevAuto);
-    //pros::rtos::Task TaskAutoEject(AutoEject);
     Arm.tare_position();
     chassis.setPose(26.5 * TeamColorInt, -2.5, 19 * TeamColorInt);
     pros::delay(20);
@@ -1026,11 +1024,15 @@ void Skills() {
 //----------------------------------------------------------------------------------Auto Chaining----------------------------------------------------------------------------------
 
 void Negative_RingRush_A1_5R_TB() {
+    //pros::rtos::Task TaskAutoEject(AutoEject);
+
     Negative_RingRush_5R();
     A1_TB();
 }
 
 void Negative_RingRush_A1_5R_CORNER() {
+    //pros::rtos::Task TaskAutoEject(AutoEject);
+
     Negative_RingRush_5R();
     A1_CORNER();
 }
@@ -1060,11 +1062,15 @@ void SoloAWP_TB() {
 }
 
 void Positive_GoalRush_3R_TB() {
+    //pros::rtos::Task TaskAutoEject(AutoEject);
+
     Positive_GoalRush_3R();
     P_GR_TB();
 }
 
 void Positive_GoalRush_3R_ELIM() {
+    //pros::rtos::Task TaskAutoEject(AutoEject);
+
     Positive_GoalRush_3R();
     P_GR_ELIM();
 }
@@ -1074,8 +1080,8 @@ void Positive_GoalRush_3R_ELIM() {
 
 void autonomous() {
     // qual
-    Positive_GoalRush_3R_TB();
-    //Negative_RingRush_A1_5R_TB();
+    //Positive_GoalRush_3R_TB();
+    Negative_RingRush_A1_5R_TB();
 
     //elim
     //Positive_GoalRush_3R_ELIM();
