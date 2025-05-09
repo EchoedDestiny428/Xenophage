@@ -362,7 +362,7 @@ void ArmControl() {
             
         } else if (ParaRAID.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
             if (((LadyBrownOdom.get_position()) > ((ArmLoadPos-8)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+2)*100))) {
-                IntakeHook.move_relative(-120, 600);
+                IntakeHook.move_relative(-100, 600);
                 pros::delay(200);
                 while (((LadyBrownOdom.get_position()) > ((ArmLoadPos-8)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+2)*100))) {
                     Arm.move_velocity(200);
@@ -390,11 +390,12 @@ void ArmControl() {
 
 void FuncIntake() {
     int IntakeSpeed = 100; //100 for skills, 90 regular
+    IntakeFlex.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     while (true) {
         if (((IntakeHook.get_torque() > 0.2) && IntakeHook.get_actual_velocity() < 5 && IntakeToggle == -1)) {
             if (((LadyBrownOdom.get_position()) > ((ArmLoadPos-8)*100)) && ((LadyBrownOdom.get_position()) < ((ArmLoadPos+2)*100))) {
                 // IntakeHook.move_relative(-120, 600);
-                // pros::delay(200);
+                // pros::delay(200);`
                 IntakeHook.brake();
                 IntakeToggle = 1;
             } else {
@@ -465,7 +466,7 @@ void IntakeJamPrevAuto() {
             if (doingWallstake) {
                 IntakeHook.move_velocity(600);
                 pros::delay(400);
-                IntakeHook.move_relative(-120, 600);
+                IntakeHook.move_relative(-100, 600);
                 pros::delay(200);
                 IntakeHook.brake();
                 goto exitJam;
@@ -594,12 +595,10 @@ void Positive_GoalRush_3R() {
     } else {
         DoinkerLeft.set_value(4096);
     }
-    
 
     chassis.turnToHeading(180, 800);
-    chassis.turnToPoint(-23 * TeamColorInt, 23, 800, {.forwards = false});
+    chassis.turnToPoint(-23 * TeamColorInt, 23, 500, {.forwards = false});
     chassis.waitUntilDone();
-    pros::delay(150);
     DoinkerLeft.set_value(0);
     DoinkerRight.set_value(0);
 
@@ -608,8 +607,8 @@ void Positive_GoalRush_3R() {
     //----------------------------------------
 
     MobileGoal.set_value(4096);
-    IntakeHook.move_velocity(600);
-    pros::delay(200);
+    IntakeHook.move_velocity(400);
+    pros::delay(400);
 
     //----------------------------------------
 
@@ -617,16 +616,17 @@ void Positive_GoalRush_3R() {
     pros::delay(300);
     MobileGoal.set_value(0);
     IntakeHook.brake();
+    IntakeHook.move_velocity(600);
 
     chassis.moveToPoint(-54 * TeamColorInt, -6, 800, {});
 
-    chassis.moveToPoint(-65 * TeamColorInt, -17, 1000, {.maxSpeed = 90, .minSpeed = 90});
+    chassis.moveToPoint(-65 * TeamColorInt, -17, 1000, {.maxSpeed = 110, .minSpeed = 110});
     // chassis.moveToPoint(-48 * TeamColorInt, -0, 800, {.forwards = false, .maxSpeed = 80, .minSpeed = 80});
     // chassis.moveToPoint(-54 * TeamColorInt, -6, 1000, {.maxSpeed = 10, .minSpeed = 10}, false);
     // IntakeHook.brake();
     // MobileGoal.set_value(0);
 
-    chassis.moveToPoint(-54 * TeamColorInt, -6, 800, {.forwards = false, .maxSpeed = 40, .minSpeed = 30});
+    chassis.moveToPoint(-51 * TeamColorInt, -3, 800, {.forwards = false, .maxSpeed = 40, .minSpeed = 30});
 
     //----------------------------------------
 
@@ -637,7 +637,7 @@ void Positive_GoalRush_3R() {
     }
 
     IntakeHook.brake();
-    chassis.moveToPoint(-56 * TeamColorInt, -7, 800);
+    chassis.moveToPoint(-56.5 * TeamColorInt, -7.5, 9000);
     chassis.turnToHeading(-50 * TeamColorInt, 800, {}, false);
     DoinkerLeft.set_value(0);
     DoinkerRight.set_value(0);
@@ -655,6 +655,9 @@ void Positive_GoalRush_3R() {
 
     chassis.turnToPoint(-40 * TeamColorInt, 35, 800, {.forwards = false});
     chassis.moveToPoint(-40 * TeamColorInt, 35, 800, {.forwards = false}, false);
+
+    pros::rtos::Task Ej(AutoEject);
+
     MobileGoal.set_value(4096);
     IntakeHook.move_velocity(600);
     
@@ -672,7 +675,8 @@ void P_GR_TB() {
 }
 
 void P_GR_ELIM() {
-    chassis.turnToHeading(76 * TeamColorInt, 1000);
+    chassis.turnToPoint(-40 * TeamColorInt, 43.5, 800, {.forwards = false});
+    //chassis.moveToPoint(-40 * TeamColorInt, 43.5, 800, {.forwards = false});
 
     chassis.waitUntilDone();
 }
@@ -745,8 +749,8 @@ void Negative_RingRush_5R() {
         DoinkerLeft.set_value(4096);
     }
 
-    chassis.moveToPoint(39.5 * TeamColorInt, 38.5, 700, {.minSpeed = 127});
-    chassis.moveToPoint(39.5 * TeamColorInt, 38.5, 300, {}, false);
+    chassis.moveToPoint(39.5 * TeamColorInt, 38.5, 600, {.minSpeed = 127});
+    chassis.moveToPoint(39.5 * TeamColorInt, 38.5, 400, {}, false);
     pros::delay(200);
 
     //----------------------------------------
@@ -777,7 +781,7 @@ void Negative_RingRush_5R() {
     pros::delay(200);
     chassis.turnToHeading(90 * TeamColorInt, 400);
 
-    chassis.moveToPoint(46 * TeamColorInt, 24, 1000, {.maxSpeed = 110}, false);
+    chassis.moveToPoint(46 * TeamColorInt, 26, 1000, {.maxSpeed = 110}, false);
     pros::delay(300);
 
     // //----------------------------------------
@@ -927,8 +931,8 @@ void Negative_PC() {
 }
 
 void A1_TB() {
-    chassis.turnToPoint(-2 * TeamColorInt, -8.5, 800);
-    chassis.moveToPoint(-2 * TeamColorInt, -8.5, 1500);
+    chassis.turnToPoint(-2 * TeamColorInt, -7.5, 800);
+    chassis.moveToPoint(-2 * TeamColorInt, -7.5, 1500);
     pros::delay(400);
     Arm.move_absolute(ArmLoadPos*10+40, 200);
 
@@ -948,12 +952,12 @@ void A1_TB() {
     Arm.move_absolute(ScoreAlliancePos * 10 + 100, 200);
 
     pros::delay(300);
-    chassis.moveToPoint(0, 0, 500, {.forwards = false, .minSpeed = 127});
+    chassis.moveToPoint(0, 2, 500, {.forwards = false, .minSpeed = 127});
 
     if (TeamColor) {
-        chassis.turnToHeading(5 * TeamColorInt, 1000, {.maxSpeed = 80});
+        chassis.turnToHeading(0 * TeamColorInt, 1000, {.maxSpeed = 80});
     } else {
-        chassis.turnToHeading(15 * TeamColorInt, 1000, {.maxSpeed = 80});
+        chassis.turnToHeading(0 * TeamColorInt, 1000, {.maxSpeed = 80});
     }
 }
 
@@ -1079,14 +1083,15 @@ void Positive_GoalRush_3R_ELIM() {
 //----------------------------------------------------------------------------------Auto----------------------------------------------------------------------------------
 
 void autonomous() {
+    //pros::rtos::Task Ej(AutoEject);
     // qual
     //Positive_GoalRush_3R_TB();
-    Negative_RingRush_A1_5R_TB();
+    //Negative_RingRush_A1_5R_TB();
 
     //elim
-    //Positive_GoalRush_3R_ELIM();
+    Positive_GoalRush_3R_ELIM();
     //Negative_RingRush_A1_5R_CORNER();
-}
+} 
 
 //----------------------------------------------------------------------------------opcontrol----------------------------------------------------------------------------------
 
